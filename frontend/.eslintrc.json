@@ -1,0 +1,23 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript", "prettier"],
+  "rules": {
+    // Enforce camelCase for non-constant variables
+    "camelcase": [
+      "error",
+      {
+        "properties": "never", // Don't enforce camelCase for object properties
+        "ignoreDestructuring": false, // Enforce camelCase in destructuring
+        "allow": ["^[A-Z0-9_]+$"] // Allow constant variables in UPPER_CASE
+      }
+    ],
+
+    // Double quotes unless using string interpolation
+    "quotes": [
+      "error",
+      "double",
+      { "avoidEscape": true, "allowTemplateLiterals": true }
+    ],
+    "semi": 2, // Enforce semicolons
+    "prefer-destructuring": ["error", { "object": true, "array": false }] // Prefer object destructuring
+  }
+}
