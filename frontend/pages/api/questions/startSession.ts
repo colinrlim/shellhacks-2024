@@ -46,6 +46,15 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     // Get current topics for user
     const topics = await Topic.find({ createdBy: auth0Id });
 
+    // Clean topics to remove unnecessary fields (createdBy, _id)
+    const cleanedTopics = topics.map((t) => {
+      return {
+        title: t.title,
+        description: t.description,
+        relationships: t.relationships,
+      };
+    });
+
     const metadata = {
       current_topic: {
         description: SYSTEM_METADATA_PROMPTS.current_topic,
@@ -53,10 +62,9 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
       },
       registered_topics: {
         description: SYSTEM_METADATA_PROMPTS.registered_topics,
-        value: topics,
+        value: cleanedTopics,
       },
     };
-
     const payload = [
       {
         role: SET_TOPIC_PROMPTS.agent_role.role,

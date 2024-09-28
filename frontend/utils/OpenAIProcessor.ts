@@ -7,6 +7,7 @@ import { IQuestion } from "@/models/Question";
 import { ChatCompletion } from "openai/resources/index.mjs";
 import { QuestionProp } from "@/types/Questions";
 import Topic, { ITopic } from "@/models/Topic";
+import { Relationship } from "@/types";
 
 export async function OpenAIProcessor(
   sessionUser: Claims,
@@ -45,7 +46,7 @@ export async function OpenAIProcessor(
 
     for (let i = 0; i < tool_calls.length; i++) {
       let tool_call = tool_calls[i].function;
-
+      console.log(tool_call);
       // Create multiple choice question
       if (tool_call.name === "create_multiple_choice_question") {
         let new_question = JSON.parse(tool_call.arguments);
@@ -86,7 +87,49 @@ export async function OpenAIProcessor(
         let strength = connection.strength;
 
         // Find parent topic
-        // let parentTopicDoc = await Topic.findOne({ topic: parentTopic });
+        let parentTopicExists = await Topic.findOne({
+          name: parentTopic,
+          createdBy: auth0Id,
+        });
+        if (!parentTopicExists) {
+          return res.status(400).json({
+            message: `Parent topic ${parentTopic} does not exist.`,
+          });
+        }
+
+        // Verify child topic exists
+        let childTopicExists = await Topic.findOne({
+          name: childTopic,
+          createdBy: auth0Id,
+        });
+        if (!childTopicExists) {
+          return res.status(400).json({
+            message: `Child topic ${childTopic} does not exist.`,
+          });
+        }
+
+        // Check if relationship already exists
+        let relationshipExists = parentTopicExists.relationships.find(
+          (relationship: Relationship) =>
+            relationship.child_topic === childTopic
+        );
+
+        // if the relationship does exist, update the strength
+        if (relationshipExists) {
+          relationshipExists.strength = strength;
+        } else {
+          parentTopicExists.relationships.push({
+            child_topic: childTopic,
+            strength,
+          });
+        }
+
+        await parentTopicExists.save();
+
+        // Update flags
+        if (!updateFlags.topics) {
+          updateFlags.topics = true;
+        }
       } else if (tool_call.name === "establish_topic") {
         let newTopic = JSON.parse(tool_call.arguments);
 
