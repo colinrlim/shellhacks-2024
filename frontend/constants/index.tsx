@@ -35,6 +35,10 @@ const SYSTEM_METADATA_PROMPTS = {
     "This is the current topic at hand. If the value is empty, that means that this is a new session and that there is no selected topic yet. However, this does not necessarily mean that this is the user's first session.",
   registered_topics:
     "This lists all registered topics of which previous questions were asked. The topics are structured as nodes in a network, where connections represent relationships between topics. Topics have a pseudo-hierarchical relationship. A connection from Topic A to Topic B means that Topic A is a prerequisite for Topic B. All connections are directed. If the two topics go hand-in-hand, there may be both a directed connection from Topic A to Topic B and a directed connection from Topic B to Topic A.",
+  favorited_questions:
+    "This lists previously generated questions which the user has favorited. This can be either because they are interested in the topic, because they are struggling with it, or similar. Please consider these favorited questions in your generation of new questions. If there is a recurrent element in the questions (such as the type of knowledge they test, like theoretical vs exemplar), take that into consideration. You do not necessarily have to integrate the topics of these questions into your future generated questions, especially if the topics are significantly distinct from the one at hand.",
+  historical_questions:
+    "This lists the most recent questions answered, from newest to oldest. Analyze the user's performance and topic comprehension based on these results, and guide your question generation accordingly.",
 };
 
 const OPENAI_TOOLS = [
@@ -108,7 +112,7 @@ const OPENAI_TOOLS = [
     function: {
       name: "establish_connection",
       description:
-        "Call this when you want to create a directed connection to represent a hierarchical relationship between two topics. If you want to establish the two topics as equals in relationship, be sure to call this function again with the arguments flipped.",
+        "Call this when you want to create a directed connection to represent a hierarchical relationship between two topics. If you want to establish the two topics as equals in relationship, be sure to call this function again with the arguments flipped. Ensure that all topics registered in the metadata have at least one connection (either as a child_topic or as a prerequisite_topic), even if it is extremely distinct. If you use establish_topic to register a new topic, be sure to call this function as well at least once.",
       parameters: {
         type: "object",
         properties: {
@@ -154,7 +158,6 @@ const OPENAI_TOOLS = [
     },
   },
 ];
-
 export {
   GENERATE_QUESTION_PROMPT,
   SET_TOPIC_PROMPTS,

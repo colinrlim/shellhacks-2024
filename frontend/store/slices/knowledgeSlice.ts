@@ -26,14 +26,21 @@ const initialState: KnowledgeState = {
   error: null,
 };
 
+interface StartSessionPayloadProps {
+  topic: string;
+  sessionId: string;
+}
+
 // Async thunk to start a session
 export const startSession = createAsyncThunk(
   "knowledge/startSession",
-  async (topic: string, { dispatch, rejectWithValue }) => {
+  async (payload: StartSessionPayloadProps, { dispatch, rejectWithValue }) => {
+    let { topic, sessionId } = payload;
     try {
       // Send PUT request to start the session
       const response = await axios.put("/api/questions/startSession", {
         topic,
+        sessionId,
       });
       const data = response.data;
 

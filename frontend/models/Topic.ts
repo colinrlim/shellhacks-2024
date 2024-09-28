@@ -27,6 +27,10 @@ const TopicSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  sessionId: {
+    type: String,
+    required: true,
+  },
 });
 
 // Create a model interface for Topic
@@ -38,6 +42,7 @@ export interface ITopic extends Document {
     strength: number;
   }[];
   createdBy: string;
+  sessionId: string;
 }
 
 // Create and export the model

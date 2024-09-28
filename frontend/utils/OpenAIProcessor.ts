@@ -7,9 +7,11 @@ import { IQuestion } from "@/models/Question";
 import { ChatCompletion } from "openai/resources/index.mjs";
 import { QuestionProp } from "@/types/Questions";
 import Topic, { ITopic } from "@/models/Topic";
+import { Relationship } from "@/types";
 
 export async function OpenAIProcessor(
   sessionUser: Claims,
+  sessionId: string,
   completion: object,
   topic: string,
   res: NextApiResponse
@@ -41,11 +43,12 @@ export async function OpenAIProcessor(
       questions: false,
       topics: false,
       currentTopic: false,
+      questionExplanation: false,
     };
 
     for (let i = 0; i < tool_calls.length; i++) {
       let tool_call = tool_calls[i].function;
-
+      console.log(tool_call);
       // Create multiple choice question
       if (tool_call.name === "create_multiple_choice_question") {
         let new_question = JSON.parse(tool_call.arguments);
@@ -70,6 +73,7 @@ export async function OpenAIProcessor(
           choices,
           correctChoice: correct_choice,
           createdBy: auth0Id,
+          sessionId,
           topic,
         }).catch((e) => console.log(e));
 
@@ -86,7 +90,51 @@ export async function OpenAIProcessor(
         let strength = connection.strength;
 
         // Find parent topic
-        // let parentTopicDoc = await Topic.findOne({ topic: parentTopic });
+        let parentTopicExists = await Topic.findOne({
+          name: parentTopic,
+          createdBy: auth0Id,
+          sessionId,
+        });
+        if (!parentTopicExists) {
+          return res.status(400).json({
+            message: `Parent topic ${parentTopic} does not exist.`,
+          });
+        }
+
+        // Verify child topic exists
+        let childTopicExists = await Topic.findOne({
+          name: childTopic,
+          createdBy: auth0Id,
+          sessionId,
+        });
+        if (!childTopicExists) {
+          return res.status(400).json({
+            message: `Child topic ${childTopic} does not exist.`,
+          });
+        }
+
+        // Check if relationship already exists
+        let relationshipExists = parentTopicExists.relationships.find(
+          (relationship: Relationship) =>
+            relationship.child_topic === childTopic
+        );
+
+        // if the relationship does exist, update the strength
+        if (relationshipExists) {
+          relationshipExists.strength = strength;
+        } else {
+          parentTopicExists.relationships.push({
+            child_topic: childTopic,
+            strength,
+          });
+        }
+
+        await parentTopicExists.save();
+
+        // Update flags
+        if (!updateFlags.topics) {
+          updateFlags.topics = true;
+        }
       } else if (tool_call.name === "establish_topic") {
         let newTopic = JSON.parse(tool_call.arguments);
 
@@ -105,6 +153,7 @@ export async function OpenAIProcessor(
             name: newTopic.name,
             description: newTopic.description,
             createdBy: auth0Id,
+            sessionId: sessionId,
           });
 
           // Set new topic as current topic
@@ -116,9 +165,9 @@ export async function OpenAIProcessor(
           updateFlags.topics = true;
           updateFlags.currentTopic = true;
         }
+      } else if (tool_call.name === "explain_question") {
+        let explanation = tool_call.arguments;
       }
-
-      // Establish connection
     }
 
     // Craft a response that has the updates made so the client can update the redux store
@@ -127,11 +176,13 @@ export async function OpenAIProcessor(
         questions: boolean;
         topics: boolean;
         currentTopic: boolean;
+        questionExplanation: boolean;
       };
       payload: {
         questions?: IQuestion[];
         topics?: ITopic[];
         currentTopic: string;
+        questionExplanation?: string;
       };
     }
 
@@ -141,6 +192,7 @@ export async function OpenAIProcessor(
         ...(updateFlags.questions && { questions: [] }),
         ...(updateFlags.topics && { topics: [] }),
         currentTopic: topic,
+        questionExplanation: "",
       },
     };
 
@@ -148,6 +200,7 @@ export async function OpenAIProcessor(
       let updatedQuestions = (await Question.find({
         topic,
         createdBy: auth0Id,
+        sessionId,
       }).catch((e) => console.log(e))) as IQuestion[];
 
       updates.payload.questions = updatedQuestions;
@@ -156,9 +209,13 @@ export async function OpenAIProcessor(
     if (updateFlags.topics) {
       let updatedTopics = (await Topic.find({
         createdBy: auth0Id,
+        sessionId,
       }).catch((e) => console.log(e))) as ITopic[];
 
       updates.payload.topics = updatedTopics;
+    }
+
+    if (updateFlags.questionExplanation) {
     }
 
     return updates;

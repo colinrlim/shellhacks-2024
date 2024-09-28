@@ -13,6 +13,7 @@ import Loader from "@/components/Loader";
 function Learn() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.user.userInfo);
+  const sessionId = useAppSelector((state) => state.user.sessionId);
   const router = useRouter();
 
   const [mounted, setMounted] = useState(false);
@@ -28,15 +29,26 @@ function Learn() {
 
   // Redirect to home if not logged in or no current topic
   useEffect(() => {
-    if (mounted && (!user || !currentTopic)) {
+    if (mounted && (!user || !currentTopic || !sessionId)) {
       router.push("/");
     }
   }, [mounted, currentTopic, user, router]);
 
   // Dispatch startSession when component mounts if currentTopic exists
   useEffect(() => {
-    if (mounted && user && currentTopic && questions.length === 0) {
-      dispatch(startSession(currentTopic));
+    if (
+      mounted &&
+      user &&
+      currentTopic &&
+      questions.length === 0 &&
+      sessionId
+    ) {
+      dispatch(
+        startSession({
+          topic: currentTopic,
+          sessionId,
+        })
+      );
     }
   }, [mounted, user, currentTopic, questions.length, dispatch]);
 
