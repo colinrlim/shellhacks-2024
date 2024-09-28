@@ -14,20 +14,30 @@ const RelationshipSchema = new mongoose.Schema({
 
 // Define the topic schema
 const TopicSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
   description: {
     type: String,
     required: true,
   },
   relationships: [RelationshipSchema],
+  createdBy: {
+    type: String,
+    required: true,
+  },
 });
 
 // Create a model interface for Topic
 export interface ITopic extends Document {
+  name: string;
   description: string;
   relationships: {
     child_topic: string; // The key as a string
     strength: number;
   }[];
+  createdBy: string;
 }
 
 // Create and export the model

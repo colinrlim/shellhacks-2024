@@ -33,6 +33,8 @@ const SET_TOPIC_PROMPTS = {
 const SYSTEM_METADATA_PROMPTS = {
   current_topic:
     "This is the current topic at hand. If the value is empty, that means that this is a new session and that there is no selected topic yet. However, this does not necessarily mean that this is the user's first session.",
+  registered_topics:
+    "This lists all registered topics of which previous questions were asked. The topics are structured as nodes in a network, where connections represent relationships between topics. Topics have a pseudo-hierarchical relationship. A connection from Topic A to Topic B means that Topic A is a prerequisite for Topic B. All connections are directed. If the two topics go hand-in-hand, there may be both a directed connection from Topic A to Topic B and a directed connection from Topic B to Topic A.",
 };
 
 const OPENAI_TOOLS = [

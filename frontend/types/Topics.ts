@@ -4,6 +4,8 @@ export interface Relationship {
 }
 
 export interface Topic {
+  name: string;
   description: string;
   relationships: Relationship[];
+  createdBy: string;
 }

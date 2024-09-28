@@ -12,6 +12,7 @@ import {
   OPENAI_TOOLS,
 } from "@/constants";
 import { OpenAIProcessor } from "@/utils/OpenAIProcessor";
+import Topic from "@/models/Topic";
 
 const client = new OpenAI({
   apiKey: process.env["OPENAI_API_KEY"],
@@ -42,10 +43,17 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
       await User.create({ auth0Id, topic });
     }
 
+    // Get current topics for user
+    const topics = await Topic.find({ createdBy: auth0Id });
+
     const metadata = {
       current_topic: {
         description: SYSTEM_METADATA_PROMPTS.current_topic,
         value: topic,
+      },
+      registered_topics: {
+        description: SYSTEM_METADATA_PROMPTS.registered_topics,
+        value: topics,
       },
     };
 
