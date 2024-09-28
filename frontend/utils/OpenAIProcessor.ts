@@ -9,6 +9,8 @@ import { QuestionProp } from "@/types/Questions";
 import Topic, { ITopic } from "@/models/Topic";
 import { Relationship } from "@/types";
 
+const DEBUG_FLAG = process.env.DEBUG_FLAG;
+
 export async function OpenAIProcessor(
   sessionUser: Claims,
   sessionId: string,
@@ -48,7 +50,7 @@ export async function OpenAIProcessor(
 
     for (let i = 0; i < tool_calls.length; i++) {
       let tool_call = tool_calls[i].function;
-      console.log(tool_call);
+      if (DEBUG_FLAG) console.log(tool_call);
       // Create multiple choice question
       if (tool_call.name === "create_multiple_choice_question") {
         let new_question = JSON.parse(tool_call.arguments);

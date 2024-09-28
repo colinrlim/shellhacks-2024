@@ -73,13 +73,15 @@ function Learn() {
             </div>
           )}
 
-          {questions.map((question, index) => (
-            <Question
-              key={question.question}
-              question={question}
-              questionNumber={index + 1}
-            />
-          ))}
+          {currentTopic &&
+            questions.map((question, index) => (
+              <Question
+                key={question.question}
+                question={question}
+                questionNumber={index + 1}
+                currentTopic={currentTopic}
+              />
+            ))}
         </div>
       </div>
     </div>

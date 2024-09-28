@@ -1,10 +1,12 @@
 // Question Types
 
 export interface QuestionProp {
-  id: number;
+  _id: number;
   question: string;
   choices: Record<"1" | "2" | "3" | "4", string>;
   correctChoice: number;
+  selectedChoice?: number;
+  isCorrect?: boolean;
 }
 
 export interface HistoricalQuestion {

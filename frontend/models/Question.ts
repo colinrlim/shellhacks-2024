@@ -5,6 +5,8 @@ export interface IQuestion extends Document {
   question: string;
   choices: Record<"1" | "2" | "3" | "4", string>;
   correctChoice: number;
+  selectedChoice?: number;
+  isCorrect?: boolean;
   createdAt: Date;
   createdBy: string;
   sessionId: string;
@@ -22,6 +24,8 @@ const QuestionSchema = new mongoose.Schema<IQuestion>({
     },
     required: true,
   },
+  selectedChoice: { type: Number, min: 1, max: 4 },
+  isCorrect: { type: Boolean },
   correctChoice: { type: Number, required: true, min: 1, max: 4 }, // Corrected
   createdAt: { type: Date, default: Date.now },
   createdBy: { type: String, required: true },
