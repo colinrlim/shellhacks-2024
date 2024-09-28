@@ -40,7 +40,12 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     const user = await User.findOne({ auth0Id });
     // If the user is not found, create a new user
     if (!user) {
-      await User.create({ auth0Id, topic });
+      await User.create({
+        auth0Id,
+        topic,
+        name: session.user.name,
+        email: session.user.email,
+      });
     }
 
     // Get current topics for user

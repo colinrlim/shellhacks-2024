@@ -33,7 +33,12 @@ export async function OpenAIProcessor(
     const user = await User.findOne({ auth0Id });
     // If the user is not found, create a new user
     if (!user) {
-      await User.create({ auth0Id, completion });
+      await User.create({
+        auth0Id,
+        topic,
+        name: sessionUser.name,
+        email: sessionUser.email,
+      });
     }
 
     // Verify session ID
