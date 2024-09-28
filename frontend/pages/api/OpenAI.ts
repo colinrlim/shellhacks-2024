@@ -11,6 +11,7 @@ import {
   SYSTEM_METADATA_PROMPTS,
   OPENAI_TOOLS,
 } from "@/constants";
+import Topic from "@/models/Topic";
 
 async function OpenAIProcessor(req: NextApiRequest, res: NextApiResponse) {
   // verify post
@@ -48,14 +49,16 @@ async function OpenAIProcessor(req: NextApiRequest, res: NextApiResponse) {
     // ! Do Calls
     // @ts-ignore I don't know why its saying this
     const { tool_calls } = completion?.choices[0]?.message || "";
+    console.log();
     if (!tool_calls || tool_calls.length === 0) {
       return res.status(200).json({ response: "No tool calls found" });
     }
 
     const updateFlags = {
       questions: false,
+      topics: false,
     };
-
+    console.log(tool_calls);
     for (let i = 0; i < tool_calls.length; i++) {
       let tool_call = tool_calls[i];
 
@@ -70,9 +73,36 @@ async function OpenAIProcessor(req: NextApiRequest, res: NextApiResponse) {
         if (!updateFlags.questions) {
           updateFlags.questions = true;
         }
-      }
+      } else if (tool_call === "establish_connection") {
+        // Establish connection
 
-      // Establish topic
+        let connection = tool_call.arguments;
+        let parentTopic = connection.prerequisite_topic;
+        let childTopic = connection.child_topic;
+        let strength = connection.strength;
+
+        // Find parent topic
+        // let parentTopicDoc = await Topic.findOne({ topic: parentTopic });
+      } else if (tool_call === "establish_topic") {
+        console.log(1);
+        let newTopic = tool_call.arguments;
+
+        // Check whether the topic already exists
+        let topicExists = await Topic.findOne({ topic: newTopic.name });
+
+        // If the topic already exists, update the description
+        if (topicExists) {
+          topicExists.description = newTopic.description;
+          await topicExists.save();
+        } else {
+          await Topic.create({ ...newTopic });
+        }
+
+        // Update flags
+        if (!updateFlags.topics) {
+          updateFlags.topics = true;
+        }
+      }
 
       // Establish connection
     }
@@ -83,6 +113,7 @@ async function OpenAIProcessor(req: NextApiRequest, res: NextApiResponse) {
       updateFlags,
       payload: {
         ...(updateFlags.questions && { questions: [] }),
+        ...(updateFlags.topics && { topics: [] }),
       },
     };
 
@@ -91,6 +122,10 @@ async function OpenAIProcessor(req: NextApiRequest, res: NextApiResponse) {
         topic,
         createdBy: auth0Id,
       });
+    }
+
+    if (updateFlags.topics) {
+      response.payload.topics = await Topic.find();
     }
 
     return res.status(200).json({ response });
