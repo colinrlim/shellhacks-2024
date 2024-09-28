@@ -9,11 +9,13 @@ interface UserInfo {
 interface UserState {
   userInfo: UserInfo | null;
   isAuthenticated: boolean;
+  sessionId: string | null;
 }
 
 const initialState: UserState = {
   userInfo: null,
   isAuthenticated: false,
+  sessionId: null,
 };
 
 const userSlice = createSlice({
@@ -23,6 +25,9 @@ const userSlice = createSlice({
     setUser(state, action: PayloadAction<UserInfo>) {
       state.userInfo = action.payload;
       state.isAuthenticated = true;
+
+      // generate a new session ID
+      state.sessionId = Math.random().toString(36).substring(2);
     },
     clearUser(state) {
       state.userInfo = null;

@@ -7,6 +7,7 @@ import { FaPaperPlane } from "react-icons/fa"; // Example icon from react-icons
 import { useAppSelector } from "@/store/types";
 import { useAppDispatch } from "@/store";
 import { clearUser } from "@/store/slices/userSlice";
+import { setCurrentTopic } from "@/store/slices/knowledgeSlice";
 
 function Dashboard() {
   const dispatch = useAppDispatch();
@@ -19,7 +20,12 @@ function Dashboard() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/learn");
+
+    // Here we want to use redux to set the topic in the store
+    // and then redirect to the learn page
+    dispatch(setCurrentTopic(input));
+
+    router.push("/dashboard/learn");
   };
 
   return (
