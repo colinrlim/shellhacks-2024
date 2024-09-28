@@ -1,15 +1,21 @@
 // app/dashboard/page.tsx (or pages/dashboard.tsx if you're in Next.js 12)
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
-import { useUser } from "@auth0/nextjs-auth0/client";
 import { withProtected } from "@/hoc";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { FaPaperPlane } from "react-icons/fa"; // Example icon from react-icons
+import { useAppSelector } from "@/store/types";
+import { useAppDispatch } from "@/store";
+import { clearUser } from "@/store/slices/userSlice";
 
 function Dashboard() {
-  const { user } = useUser();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.user.userInfo);
   const [input, setInput] = useState("");
   const router = useRouter();
+
+  if (!user) dispatch(clearUser());
+  const { name } = user || {};
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +26,7 @@ function Dashboard() {
     <div className="flex h-screen items-center justify-center bg-white">
       <div className="text-center">
         <h1 className="text-5xl font-semibold mb-6">
-          Hello, {user?.name || "User"}!
+          Hello, {name || "User"}!
         </h1>
         <p className="text-2xl font-light mb-10">
           What would you like to learn today?

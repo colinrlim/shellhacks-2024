@@ -1,20 +1,17 @@
 import { useState } from "react";
 import { FaUser } from "react-icons/fa";
-import { useUser } from "@auth0/nextjs-auth0/client";
 import Link from "next/link";
+import { useAppDispatch } from "@/store";
+import { useAppSelector } from "@/store/types";
+import { clearUser } from "@/store/slices/userSlice";
 
 const ProfilePopover: React.FC = () => {
-  const { user, error, isLoading } = useUser();
-  const [isHovered, setIsHovered] = useState(false);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.user.userInfo);
+  if (!user) dispatch(clearUser());
+  const { name } = user || {};
 
-  if (isLoading) return null; // Or a loader component
-  if (error)
-    return (
-      <div className="fixed bottom-4 left-4 z-50 text-red-500">
-        Error: {error.message}
-      </div>
-    );
-  if (!user) return null;
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <div
@@ -67,7 +64,7 @@ const ProfilePopover: React.FC = () => {
         `}
       >
         <FaUser className="text-black text-xl mr-2" />
-        <span className="text-black truncate">{user.name}</span>
+        <span className="text-black truncate">{name}</span>
       </div>
     </div>
   );
