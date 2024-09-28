@@ -42,6 +42,7 @@ export async function OpenAIProcessor(
       questions: false,
       topics: false,
       currentTopic: false,
+      questionExplanation: false,
     };
 
     for (let i = 0; i < tool_calls.length; i++) {
@@ -159,9 +160,9 @@ export async function OpenAIProcessor(
           updateFlags.topics = true;
           updateFlags.currentTopic = true;
         }
+      } else if (tool_call.name === "explain_question") {
+        let explanation = tool_call.arguments;
       }
-
-      // Establish connection
     }
 
     // Craft a response that has the updates made so the client can update the redux store
@@ -170,11 +171,13 @@ export async function OpenAIProcessor(
         questions: boolean;
         topics: boolean;
         currentTopic: boolean;
+        questionExplanation: boolean;
       };
       payload: {
         questions?: IQuestion[];
         topics?: ITopic[];
         currentTopic: string;
+        questionExplanation?: string;
       };
     }
 
@@ -184,6 +187,7 @@ export async function OpenAIProcessor(
         ...(updateFlags.questions && { questions: [] }),
         ...(updateFlags.topics && { topics: [] }),
         currentTopic: topic,
+        questionExplanation: "",
       },
     };
 
@@ -202,6 +206,9 @@ export async function OpenAIProcessor(
       }).catch((e) => console.log(e))) as ITopic[];
 
       updates.payload.topics = updatedTopics;
+    }
+
+    if (updateFlags.questionExplanation) {
     }
 
     return updates;
