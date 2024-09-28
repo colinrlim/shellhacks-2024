@@ -110,11 +110,15 @@ async function answerQuestionHandler(
       },
     ];
 
-    // @ts-ignore
-    const completion = await client.chat.completions.create({
+    const openAIChatCompletionObject = {
       model: "gpt-4o-mini",
       messages: payload,
       tools: OPENAI_TOOLS,
+    };
+
+    // @ts-ignore
+    const completion = await client.chat.completions.create({
+      ...openAIChatCompletionObject,
     });
 
     // Now we need to process openai completion
@@ -123,7 +127,8 @@ async function answerQuestionHandler(
       sessionId,
       completion,
       currentTopic,
-      res
+      res,
+      openAIChatCompletionObject
     );
 
     if (!OpenAIFunctionResults) {

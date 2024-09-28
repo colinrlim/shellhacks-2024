@@ -76,7 +76,7 @@ function Learn() {
           {currentTopic &&
             questions.map((question, index) => (
               <Question
-                key={question.question}
+                key={index}
                 question={question}
                 questionNumber={index + 1}
                 currentTopic={currentTopic}

@@ -8,6 +8,8 @@ import { ChatCompletion } from "openai/resources/index.mjs";
 import { QuestionProp } from "@/types/Questions";
 import Topic, { ITopic } from "@/models/Topic";
 import { Relationship } from "@/types";
+import { ChatCompletionMessageParam } from "openai/src/resources/index.js";
+import { GENERATE_QUESTION_PROMPT } from "@/constants";
 
 const DEBUG_FLAG = process.env.DEBUG_FLAG;
 
@@ -16,7 +18,8 @@ export async function OpenAIProcessor(
   sessionId: string,
   completion: object,
   topic: string,
-  res: NextApiResponse
+  res: NextApiResponse,
+  openAIChatCompletionObject: object
 ) {
   try {
     // Connect to Database
@@ -31,6 +34,11 @@ export async function OpenAIProcessor(
     // If the user is not found, create a new user
     if (!user) {
       await User.create({ auth0Id, completion });
+    }
+
+    // Verify session ID
+    if (!sessionId) {
+      return res.status(400).json({ message: "Invalid session ID" });
     }
 
     // ! Do Calls
@@ -144,6 +152,7 @@ export async function OpenAIProcessor(
         let topicExists = await Topic.findOne({
           name: newTopic.name,
           createdBy: auth0Id,
+          sessionId,
         });
 
         // If the topic already exists, update the description
@@ -160,16 +169,106 @@ export async function OpenAIProcessor(
 
           // Set new topic as current topic
           topic = newTopic.name;
+          updateFlags.topics = true;
+        }
+        const tArgs = tool_call.arguments;
+
+        // Check for prerequisite topics
+        if (tArgs.hasOwnProperty("prerequisite_topics")) {
+          // prereqs exist
+          for (let i = 0; i < tArgs.prerequisite_topics.length; i++) {
+            let parentTopicData = tArgs.prerequisite_topics[i];
+
+            // Find parent topic
+            let parentTopicExists = await Topic.findOne({
+              name: parentTopicData.name,
+              createdBy: auth0Id,
+              sessionId,
+            });
+            // If the parent topic does not exist, create it
+            if (!parentTopicExists) {
+              parentTopicExists = await Topic.create({
+                name: parentTopicData.name,
+                description: parentTopicData.description,
+                createdBy: auth0Id,
+                sessionId,
+              });
+            }
+
+            // Establish the connection
+            let relationshipExists = parentTopicExists.relationships.find(
+              (relationship: Relationship) =>
+                relationship.child_topic === newTopic.name
+            );
+
+            // if the relationship does exist, update the strength
+            if (relationshipExists) {
+              relationshipExists.strength = parentTopicData.strength;
+            } else {
+              parentTopicExists.relationships.push({
+                child_topic: newTopic.name,
+                strength: parentTopicData.strength,
+              });
+            }
+          }
         }
 
-        // Update flags
-        if (!updateFlags.topics) {
-          updateFlags.topics = true;
-          updateFlags.currentTopic = true;
+        // Check for child topics
+        if (tArgs.hasOwnProperty("child_topics")) {
+          for (let i = 0; i < tArgs.child_topics.length; i++) {
+            let childTopicData = tArgs.child_topics[i];
+
+            // Find child topic
+            let childTopicExists = await Topic.findOne({
+              name: childTopicData.name,
+              createdBy: auth0Id,
+              sessionId,
+            });
+
+            // If the child topic does not exist, create it
+            if (!childTopicExists) {
+              childTopicExists = await Topic.create({
+                name: childTopicData.name,
+                description: childTopicData.description,
+                createdBy: auth0Id,
+                sessionId,
+              });
+            }
+
+            // Establish the connection. Since it is one way, we only need to update the parent topic
+            topicExists.relationships.push({
+              child_topic: childTopicData.name,
+              strength: childTopicData.strength,
+            });
+          }
+
+          // Update flags
+          if (!updateFlags.topics) {
+            updateFlags.topics = true;
+            updateFlags.currentTopic = true;
+          }
         }
       } else if (tool_call.name === "explain_question") {
         let explanation = tool_call.arguments;
       }
+    }
+    // Check to verify we received at least on create_multiple_choice_question call. If we did not, re-run the completion and return the result processed through the OpenAIProcessor
+    if (!updateFlags.questions) {
+      console.log(12);
+      // @ts-ignore
+      openAIChatCompletionObject.messages.push({
+        role: "system",
+        content: GENERATE_QUESTION_PROMPT.did_not_generate_question,
+      });
+
+      return OpenAIProcessor(
+        sessionUser,
+        sessionId,
+        completion,
+        topic,
+        res,
+        openAIChatCompletionObject
+      );
     }
 
     // Craft a response that has the updates made so the client can update the redux store

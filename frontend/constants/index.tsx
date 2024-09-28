@@ -7,6 +7,8 @@ const GENERATE_QUESTION_PROMPT = {
     "This is the question that has just been answered. It is not currently visible to you, but the user previously sent a message that prompted you to generate this question.",
   input:
     "This includes the number of the choice that the user chose, including what that choice said. For good measure, this also includes a boolean value that represents whether the got the question correct or not.",
+  did_not_generate_question:
+    "Though not visible to you, you responded to the user with commands, but did not generate any questions. Please only generate questions with your next response.",
 };
 
 const SET_TOPIC_PROMPTS = {
@@ -34,7 +36,7 @@ const SYSTEM_METADATA_PROMPTS = {
   current_topic:
     "This is the current topic at hand. If the value is empty, that means that this is a new session and that there is no selected topic yet. However, this does not necessarily mean that this is the user's first session.",
   registered_topics:
-    "This lists all registered topics of which previous questions were asked. The topics are structured as nodes in a network, where connections represent relationships between topics. Topics have a pseudo-hierarchical relationship. A connection from Topic A to Topic B means that Topic A is a prerequisite for Topic B. All connections are directed. If the two topics go hand-in-hand, there may be both a directed connection from Topic A to Topic B and a directed connection from Topic B to Topic A.",
+    "This lists all registered topics of which previous questions were asked. The topics are structured as nodes in a network, where relationships represent relationships between topics. Topics have a pseudo-hierarchical relationship. A relationship from Topic A to Topic B means that Topic A is a prerequisite for Topic B. All relationships are directed. If the two topics go hand-in-hand, there may be both a directed relationship from Topic A to Topic B and a directed relationship from Topic B to Topic A.",
   favorited_questions:
     "This lists previously generated questions which the user has favorited. This can be either because they are interested in the topic, because they are struggling with it, or similar. Please consider these favorited questions in your generation of new questions. If there is a recurrent element in the questions (such as the type of knowledge they test, like theoretical vs exemplar), take that into consideration. You do not necessarily have to integrate the topics of these questions into your future generated questions, especially if the topics are significantly distinct from the one at hand.",
   historical_questions:
@@ -106,7 +108,7 @@ const OPENAI_TOOLS = [
     function: {
       name: "establish_topic",
       description:
-        "Call this when you want to register the topic as one of the topics for the network node visualization. Do not forget to create the connections between this topic and the other pre-existing topics, when applicable. This function call will automatically set the listed topic as the current_topic.",
+        "Call this when you want to register the topic as one of the topics for the network node visualization. Do not forget to create the relationships between this topic and the other pre-existing topics, when applicable. This function call will automatically set the listed topic as the current_topic.",
       parameters: {
         type: "object",
         properties: {
@@ -119,6 +121,54 @@ const OPENAI_TOOLS = [
             description:
               "Flavor text that describes the topic. Should be somewhat short, but still useful for a user to refer to.",
           },
+          prerequisite_topics: {
+            type: "array",
+            description:
+              "The topics to be considered prerequisites of the selected topic, or at the very least, precursors to it. Any topic that could help in the comprehension of this topic should be considered. The inputted value should match the registered topic name exactly, and the topic does not necessarily have to already been registered in the metadata.",
+            items: {
+              type: "object",
+              properties: {
+                name: {
+                  type: "string",
+                  description: "The name of prerequisite_topic in question.",
+                },
+                description: {
+                  type: "string",
+                  description:
+                    "Flavor text that describes the topic. Should be somewhat short, but still useful for a user to refer to.",
+                },
+                strength: {
+                  type: "number",
+                  description:
+                    "The strength of the relationship, as a floating point number between 0 and 1.",
+                },
+              },
+            },
+          },
+          child_topics: {
+            type: "array",
+            description:
+              "The topics that requires the the selected topic's knowledge in order to completely comprehend. This is also applicable whenever the topic would benefit significantly from the selected topic's knowledge. The inputted value should match the registered topic name exactly, and the topic does not necessarily have to already been registered in the metadata.",
+            items: {
+              type: "object",
+              properties: {
+                name: {
+                  type: "string",
+                  description: "The name of the child_topic in question.",
+                },
+                description: {
+                  type: "string",
+                  description:
+                    "Flavor text that describes the topic. Should be somewhat short, but still useful for a user to refer to.",
+                },
+                strength: {
+                  type: "number",
+                  description:
+                    "The strength of the relationship, as a floating point number between 0 and 1.",
+                },
+              },
+            },
+          },
         },
         required: ["name", "description"],
         additionalProperties: false,
@@ -128,21 +178,21 @@ const OPENAI_TOOLS = [
   {
     type: "function",
     function: {
-      name: "establish_connection",
+      name: "establish_relationship",
       description:
-        "Call this when you want to create a directed connection to represent a hierarchical relationship between two topics. If you want to establish the two topics as equals in relationship, be sure to call this function again with the arguments flipped. Ensure that all topics registered in the metadata have at least one connection (either as a child_topic or as a prerequisite_topic), even if it is extremely distinct. If you use establish_topic to register a new topic, be sure to call this function as well at least once.",
+        "Call this when you want to create a directed relationship to represent a hierarchical relationship between two topics. If you want to establish the two topics as equals in relationship, be sure to call this function again with the arguments flipped. Ensure that all topics registered in the metadata have at least one relationship (either as a child_topic or as a prerequisite_topic), even if it is extremely distinct. If you use establish_topic to register a new topic, you MUST call this function as well at least once.",
       parameters: {
         type: "object",
         properties: {
           prerequisite_topic: {
             type: "string",
             description:
-              "The topic to be considered a prerequisite of the child_topic. The inputted value should match the registered topic name exactly, and the topic should already have been registered through establish_topic.",
+              "The topic to be considered a prerequisite of the child_topic, or at the very least, a precursor to it. Any topic that could help in the comprehension of child_topic should be considered. The inputted value should match the registered topic name exactly, and the topic should already have been registered in the metadata.",
           },
           child_topic: {
             type: "string",
             description:
-              "The topic that requires the prerequisite_topic's knowledge in order to completely comprehend. This is also applicable whenever the topic would benefit significantly from the prerequisite_topic's knowledge. The inputted value should match the registered topic name exactly, and the topic should already have been registered through establish_topic.",
+              "The topic that requires the prerequisite_topic's knowledge in order to completely comprehend. This is also applicable whenever the topic would benefit significantly from the prerequisite_topic's knowledge. The inputted value should match the registered topic name exactly, and the topic should already have been registered in the metadata.",
           },
           strength: {
             type: "number",
@@ -176,6 +226,7 @@ const OPENAI_TOOLS = [
     },
   },
 ];
+
 export {
   GENERATE_QUESTION_PROMPT,
   SET_TOPIC_PROMPTS,

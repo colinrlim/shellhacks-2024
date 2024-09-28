@@ -22,7 +22,16 @@ const TopicSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  relationships: [RelationshipSchema],
+  relationships: {
+    description: {
+      type: String,
+      default: "All listed relationships are to child_topics of this topic.",
+    },
+    value: {
+      type: [RelationshipSchema],
+      default: [],
+    },
+  },
   createdBy: {
     type: String,
     required: true,
@@ -38,9 +47,12 @@ export interface ITopic extends Document {
   name: string;
   description: string;
   relationships: {
-    child_topic: string; // The key as a string
-    strength: number;
-  }[];
+    description: string;
+    value: {
+      child_topic: string;
+      strength: number;
+    }[];
+  };
   createdBy: string;
   sessionId: string;
 }

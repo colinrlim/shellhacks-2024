@@ -101,19 +101,25 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
       },
     ];
 
-    // @ts-ignore
-    const completion = await client.chat.completions.create({
+    const openAIChatCompletionObject = {
       model: "gpt-4o-mini",
       messages: payload,
       tools: OPENAI_TOOLS,
+    };
+
+    // @ts-ignore
+    const completion = await client.chat.completions.create({
+      ...openAIChatCompletionObject,
     });
 
+    // Now we need to process openai completion
     const OpenAIFunctionResults = await OpenAIProcessor(
       session.user,
       sessionId,
       completion,
       topic,
-      res
+      res,
+      openAIChatCompletionObject
     );
 
     if (!OpenAIFunctionResults) {
