@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaUser } from "react-icons/fa";
+import { FaCog, FaUser } from "react-icons/fa";
 import Link from "next/link";
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
@@ -11,6 +11,9 @@ import {
   openSettingsModal,
 } from "@/store/slices/uiSlice";
 import ProfileModal from "./ProfileModal";
+import SettingsModal from "./SettingsModal";
+import { IoPersonCircleOutline } from "react-icons/io5";
+import { SlLogout } from "react-icons/sl";
 
 const ProfilePopover: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -61,25 +64,28 @@ const ProfilePopover: React.FC = () => {
         <ul className="flex flex-col">
           <li>
             <button
-              className="w-full text-left block px-4 py-2 text-black hover:bg-white hover:bg-opacity-10 transition-colors"
+              className="w-full text-left text-md block px-4 py-2 text-black transition-colors"
               onClick={toggleProfileModal}
             >
+              <IoPersonCircleOutline className="inline-block text-md mr-5 ml-2" />
               Profile
             </button>
           </li>
           <li>
-            <Link
-              className="block px-4 py-2 text-black hover:bg-white hover:bg-opacity-10 transition-colors"
-              href="/settings"
+            <button
+              className="w-full text-left block text-md px-4 py-2 text-black transition-colors"
+              onClick={toggleSettingsModal}
             >
+              <FaCog className="inline-block text-md mr-5 ml-2" />
               Settings
-            </Link>
+            </button>
           </li>
           <li>
             <Link
               href="/api/auth/logout"
-              className="block px-4 py-2 text-black hover:bg-white hover:bg-opacity-10 transition-colors"
+              className="w-full text-left block text-md px-4 py-2 text-black transition-colors"
             >
+              <SlLogout className="inline-block text-md mr-5 ml-2" />
               Logout
             </Link>
           </li>
@@ -98,6 +104,12 @@ const ProfilePopover: React.FC = () => {
 
       {/* Profile Modal */}
       <ProfileModal isOpen={isProfileModalOpen} onClose={toggleProfileModal} />
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={toggleSettingsModal}
+      />
     </div>
   );
 };
