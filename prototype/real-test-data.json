@@ -1,0 +1,168 @@
+{
+  "current_topic": "Calculus",
+  "registered_topics": {
+    "description": "This lists all registered topics of which previous questions were asked. The topics are structured as nodes in a network, where connections represent relationships between topics. Topics have a pseudo-hierarchical relationship. A connection from Topic A to Topic B means that Topic A is a prerequisite for Topic B. All connections are directed. If the two topics go hand-in-hand, there may be both a directed connection from Topic A to Topic B and a directed connection from Topic B to Topic A.",
+    "value": {
+      "Calculus": {
+        "description": "The mathematical study of continuous change, mainly through derivatives and integrals.",
+        "relationships": []
+      },
+      "Derivatives in Calculus": {
+        "description": "The study of derivatives, representing the rate of change of a function.",
+        "relationships": []
+      },
+      "Differentiation and the Chain Rule": {
+        "description": "Understanding the principles and applications of differentiation, with a particular focus on the chain rule.",
+        "relationships": []
+      },
+      "Product Rule": {
+        "description": "A rule for differentiating the product of two functions.",
+        "relationships": []
+      }
+    }
+  },
+  "favorited_questions": {
+    "description": "This lists previously generated questions which the user has favorited. This can be either because they are interested in the topic, because they are struggling with it, or similar. Please consider these favorited questions in your generation of new questions. If there is a recurrent element in the questions (such as the type of knowledge they test, like theoretical vs exemplar), take that into consideration. You do not necessarily have to integrate the topics of these questions into your future generated questions, especially if the topics are significantly distinct from the one at hand.",
+    "value": [
+      {
+        "question": "What is the derivative of the function f(x) = x^2?",
+        "choice_1": "2x",
+        "choice_2": "x^2",
+        "choice_3": "2x^2",
+        "choice_4": "x",
+        "correct_choice": 1
+      },
+      {
+        "question": "Which of the following represents the chain rule in differentiation?",
+        "choice_1": "(f(g(x)))' = f'(g(x))g'(x)",
+        "choice_2": "(f(g(x)))' = f'(x)g'(x)",
+        "choice_3": "(f(x)g(x))' = f'(x) + g'(x)",
+        "choice_4": "(f(x)g(x))' = f(x)g'(x) + g(x)f'(x)",
+        "correct_choice": 1
+      },
+      {
+        "question": "Which of the following rules is used to differentiate the product of two functions?",
+        "choice_1": "Product Rule",
+        "choice_2": "Sum Rule",
+        "choice_3": "Chain Rule",
+        "choice_4": "Quotient Rule",
+        "correct_choice": 1
+      },
+      {
+        "question": "What is the derivative of the function f(x) = 3x^2 + 5x?",
+        "choice_1": "6x + 5",
+        "choice_2": "3x + 5",
+        "choice_3": "3x^2 + 5",
+        "choice_4": "5x^2 + 5",
+        "correct_choice": 1
+      }
+    ]
+  },
+  "historical_questions": {
+    "description": "This lists the most recent questions answered, from newest to oldest. Analyze the user's performance and topic comprehension based on these results, and guide your question generation accordingly.",
+    "value": [
+      {
+        "description": "This is the question that has just been answered. It is not currently visible to you, but the user previously sent a message that prompted you to generate this question.",
+        "question_data": {
+          "question": "Which of the following represents the chain rule in differentiation?",
+          "choice_1": "(f(g(x)))' = f'(g(x))g'(x)",
+          "choice_2": "(f(g(x)))' = f'(x)g'(x)",
+          "choice_3": "(f(x)g(x))' = f'(x) + g'(x)",
+          "choice_4": "(f(x)g(x))' = f(x)g'(x) + g(x)f'(x)",
+          "correct_choice": 1
+        },
+        "user_response": {
+          "description": "This includes the number of the choice that the user chose, including what that choice said. For good measure, this also includes a boolean value that represents whether the got the question correct or not.",
+          "selected_choice": 2,
+          "selected_choice_content": "(f(g(x)))' = f'(x)g'(x)",
+          "is_correct": false
+        }
+      },
+      {
+        "description": "This is the question that has just been answered. It is not currently visible to you, but the user previously sent a message that prompted you to generate this question.",
+        "question_data": {
+          "question": "Which of the following represents the chain rule in differentiation?",
+          "choice_1": "(f(g(x)))' = f'(g(x))g'(x)",
+          "choice_2": "(f(g(x)))' = f'(x)g'(x)",
+          "choice_3": "(f(x)g(x))' = f'(x) + g'(x)",
+          "choice_4": "(f(x)g(x))' = f(x)g'(x) + g(x)f'(x)",
+          "correct_choice": 1
+        },
+        "user_response": {
+          "description": "This includes the number of the choice that the user chose, including what that choice said. For good measure, this also includes a boolean value that represents whether the got the question correct or not.",
+          "selected_choice": 2,
+          "selected_choice_content": "(f(g(x)))' = f'(x)g'(x)",
+          "is_correct": false
+        }
+      },
+      {
+        "description": "This is the question that has just been answered. It is not currently visible to you, but the user previously sent a message that prompted you to generate this question.",
+        "question_data": {
+          "question": "Which of the following represents the chain rule in differentiation?",
+          "choice_1": "(f(g(x)))' = f'(g(x))g'(x)",
+          "choice_2": "(f(g(x)))' = f'(x)g'(x)",
+          "choice_3": "(f(x)g(x))' = f'(x) + g'(x)",
+          "choice_4": "(f(x)g(x))' = f(x)g'(x) + g(x)f'(x)",
+          "correct_choice": 1
+        },
+        "user_response": {
+          "description": "This includes the number of the choice that the user chose, including what that choice said. For good measure, this also includes a boolean value that represents whether the got the question correct or not.",
+          "selected_choice": 2,
+          "selected_choice_content": "(f(g(x)))' = f'(x)g'(x)",
+          "is_correct": false
+        }
+      },
+      {
+        "description": "This is the question that has just been answered. It is not currently visible to you, but the user previously sent a message that prompted you to generate this question.",
+        "question_data": {
+          "question": "Which of the following represents the chain rule in differentiation?",
+          "choice_1": "(f(g(x)))' = f'(g(x))g'(x)",
+          "choice_2": "(f(g(x)))' = f'(x)g'(x)",
+          "choice_3": "(f(x)g(x))' = f'(x) + g'(x)",
+          "choice_4": "(f(x)g(x))' = f(x)g'(x) + g(x)f'(x)",
+          "correct_choice": 1
+        },
+        "user_response": {
+          "description": "This includes the number of the choice that the user chose, including what that choice said. For good measure, this also includes a boolean value that represents whether the got the question correct or not.",
+          "selected_choice": 2,
+          "selected_choice_content": "(f(g(x)))' = f'(x)g'(x)",
+          "is_correct": false
+        }
+      },
+      {
+        "description": "This is the question that has just been answered. It is not currently visible to you, but the user previously sent a message that prompted you to generate this question.",
+        "question_data": {
+          "question": "Which of the following represents the chain rule in differentiation?",
+          "choice_1": "(f(g(x)))' = f'(g(x))g'(x)",
+          "choice_2": "(f(g(x)))' = f'(x)g'(x)",
+          "choice_3": "(f(x)g(x))' = f'(x) + g'(x)",
+          "choice_4": "(f(x)g(x))' = f(x)g'(x) + g(x)f'(x)",
+          "correct_choice": 1
+        },
+        "user_response": {
+          "description": "This includes the number of the choice that the user chose, including what that choice said. For good measure, this also includes a boolean value that represents whether the got the question correct or not.",
+          "selected_choice": 2,
+          "selected_choice_content": "(f(g(x)))' = f'(x)g'(x)",
+          "is_correct": false
+        }
+      },
+      {
+        "description": "This is the question that has just been answered. It is not currently visible to you, but the user previously sent a message that prompted you to generate this question.",
+        "question_data": {
+          "question": "Which of the following represents the chain rule in differentiation?",
+          "choice_1": "(f(g(x)))' = f'(g(x))g'(x)",
+          "choice_2": "(f(g(x)))' = f'(x)g'(x)",
+          "choice_3": "(f(x)g(x))' = f'(x) + g'(x)",
+          "choice_4": "(f(x)g(x))' = f(x)g'(x) + g(x)f'(x)",
+          "correct_choice": 1
+        },
+        "user_response": {
+          "description": "This includes the number of the choice that the user chose, including what that choice said. For good measure, this also includes a boolean value that represents whether the got the question correct or not.",
+          "selected_choice": 2,
+          "selected_choice_content": "(f(g(x)))' = f'(x)g'(x)",
+          "is_correct": false
+        }
+      }
+    ]
+  }
+}

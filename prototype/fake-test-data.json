@@ -1,0 +1,151 @@
+{
+    "topics": [
+      {
+        "name": "Mathematics",
+        "description": "The foundational study of numbers, quantities, and structures.",
+        "relationships": [
+          {
+            "child_topic": "Algebra",
+            "strength": 0.9
+          },
+          {
+            "child_topic": "Geometry",
+            "strength": 0.8
+          },
+          {
+            "child_topic": "Calculus",
+            "strength": 0.7
+          }
+        ]
+      },
+      {
+        "name": "Algebra",
+        "description": "The branch of mathematics dealing with symbols and the rules for manipulating those symbols.",
+        "relationships": [
+          {
+            "child_topic": "Linear Algebra",
+            "strength": 0.8
+          },
+          {
+            "child_topic": "Calculus",
+            "strength": 0.6
+          }
+        ]
+      },
+      {
+        "name": "Geometry",
+        "description": "The branch of mathematics concerned with the properties and relations of points, lines, surfaces, and solids.",
+        "relationships": [
+          {
+            "child_topic": "Trigonometry",
+            "strength": 0.9
+          },
+          {
+            "child_topic": "Calculus",
+            "strength": 0.7
+          }
+        ]
+      },
+      {
+        "name": "Linear Algebra",
+        "description": "A subfield of algebra that is concerned with vector spaces and linear mappings between these spaces.",
+        "relationships": [
+          {
+            "child_topic": "Machine Learning",
+            "strength": 0.8
+          },
+          {
+            "child_topic": "Quantum Mechanics",
+            "strength": 0.7
+          }
+        ]
+      },
+      {
+        "name": "Trigonometry",
+        "description": "The study of triangles and the relationships between their sides and angles.",
+        "relationships": [
+          {
+            "child_topic": "Calculus",
+            "strength": 0.5
+          },
+          {
+            "child_topic": "Physics",
+            "strength": 0.7
+          }
+        ]
+      },
+      {
+        "name": "Calculus",
+        "description": "The branch of mathematics that studies continuous change, including differentiation and integration.",
+        "relationships": [
+          {
+            "child_topic": "Physics",
+            "strength": 0.9
+          },
+          {
+            "child_topic": "Machine Learning",
+            "strength": 0.7
+          }
+        ]
+      },
+      {
+        "name": "Physics",
+        "description": "The science that studies matter, energy, and the interactions between them.",
+        "relationships": [
+          {
+            "child_topic": "Quantum Mechanics",
+            "strength": 0.8
+          },
+          {
+            "child_topic": "Engineering",
+            "strength": 0.9
+          }
+        ]
+      },
+      {
+        "name": "Quantum Mechanics",
+        "description": "A fundamental theory in physics that describes the behavior of matter and energy on the atomic and subatomic scale.",
+        "relationships": [
+          {
+            "child_topic": "Advanced Quantum Field Theory",
+            "strength": 0.9
+          }
+        ]
+      },
+      {
+        "name": "Machine Learning",
+        "description": "A field of computer science that focuses on using algorithms to allow computers to learn patterns and make predictions based on data.",
+        "relationships": [
+          {
+            "child_topic": "Artificial Intelligence",
+            "strength": 0.8
+          },
+          {
+            "child_topic": "Data Science",
+            "strength": 0.9
+          }
+        ]
+      },
+      {
+        "name": "Artificial Intelligence",
+        "description": "The simulation of human intelligence processes by machines, especially computer systems.",
+        "relationships": []
+      },
+      {
+        "name": "Data Science",
+        "description": "An interdisciplinary field focused on extracting knowledge and insights from data using scientific methods, processes, and systems.",
+        "relationships": []
+      },
+      {
+        "name": "Engineering",
+        "description": "The application of scientific principles to design, build, and analyze machines, systems, and structures.",
+        "relationships": []
+      },
+      {
+        "name": "Advanced Quantum Field Theory",
+        "description": "A theoretical framework in physics for constructing quantum mechanical models of subatomic particles and their interactions.",
+        "relationships": []
+      }
+    ]
+  }
+  
