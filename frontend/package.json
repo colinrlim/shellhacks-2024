@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@auth0/nextjs-auth0": "^3.5.0",
     "@headlessui/react": "^2.1.8",
     "@heroicons/react": "^2.1.5",
     "framer-motion": "^11.8.0",
