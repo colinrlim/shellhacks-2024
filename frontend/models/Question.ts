@@ -7,6 +7,7 @@ export interface IQuestion extends Document {
   correctChoice: number;
   createdAt: Date;
   createdBy: string;
+  sessionId: string;
 }
 
 const QuestionSchema = new mongoose.Schema<IQuestion>({
@@ -24,6 +25,7 @@ const QuestionSchema = new mongoose.Schema<IQuestion>({
   correctChoice: { type: Number, required: true, min: 1, max: 4 }, // Corrected
   createdAt: { type: Date, default: Date.now },
   createdBy: { type: String, required: true },
+  sessionId: { type: String, required: true },
 });
 
 // Clear model cache if necessary

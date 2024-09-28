@@ -19,7 +19,7 @@ const client = new OpenAI({
 });
 
 async function StartSession(req: NextApiRequest, res: NextApiResponse) {
-  const { topic } = await req.body;
+  const { topic, sessionId } = await req.body;
 
   if (!topic || typeof topic !== "string") {
     return res.status(400).json({ message: "Invalid topic provided" });
@@ -49,7 +49,7 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     // Clean topics to remove unnecessary fields (createdBy, _id)
     const cleanedTopics = topics.map((t) => {
       return {
-        title: t.title,
+        name: t.name,
         description: t.description,
         relationships: t.relationships,
       };
@@ -63,6 +63,14 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
       registered_topics: {
         description: SYSTEM_METADATA_PROMPTS.registered_topics,
         value: cleanedTopics,
+      },
+      favorited_questions: {
+        description: SYSTEM_METADATA_PROMPTS.favorited_questions,
+        value: [],
+      },
+      historical_questions: {
+        description: SYSTEM_METADATA_PROMPTS.historical_questions,
+        value: [],
       },
     };
     const payload = [
@@ -104,6 +112,7 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
 
     const OpenAIFunctionResults = await OpenAIProcessor(
       session.user,
+      sessionId,
       response,
       topic,
       res

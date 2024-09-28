@@ -11,6 +11,7 @@ import { Relationship } from "@/types";
 
 export async function OpenAIProcessor(
   sessionUser: Claims,
+  sessionId: string,
   completion: object,
   topic: string,
   res: NextApiResponse
@@ -72,6 +73,7 @@ export async function OpenAIProcessor(
           choices,
           correctChoice: correct_choice,
           createdBy: auth0Id,
+          sessionId,
           topic,
         }).catch((e) => console.log(e));
 
@@ -91,6 +93,7 @@ export async function OpenAIProcessor(
         let parentTopicExists = await Topic.findOne({
           name: parentTopic,
           createdBy: auth0Id,
+          sessionId,
         });
         if (!parentTopicExists) {
           return res.status(400).json({
@@ -102,6 +105,7 @@ export async function OpenAIProcessor(
         let childTopicExists = await Topic.findOne({
           name: childTopic,
           createdBy: auth0Id,
+          sessionId,
         });
         if (!childTopicExists) {
           return res.status(400).json({
@@ -149,6 +153,7 @@ export async function OpenAIProcessor(
             name: newTopic.name,
             description: newTopic.description,
             createdBy: auth0Id,
+            sessionId: sessionId,
           });
 
           // Set new topic as current topic
@@ -195,6 +200,7 @@ export async function OpenAIProcessor(
       let updatedQuestions = (await Question.find({
         topic,
         createdBy: auth0Id,
+        sessionId,
       }).catch((e) => console.log(e))) as IQuestion[];
 
       updates.payload.questions = updatedQuestions;
@@ -203,6 +209,7 @@ export async function OpenAIProcessor(
     if (updateFlags.topics) {
       let updatedTopics = (await Topic.find({
         createdBy: auth0Id,
+        sessionId,
       }).catch((e) => console.log(e))) as ITopic[];
 
       updates.payload.topics = updatedTopics;
