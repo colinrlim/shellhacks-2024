@@ -1,12 +1,13 @@
 // store/index.ts
 import { configureStore, ThunkAction, Action } from "@reduxjs/toolkit";
 import { useDispatch } from "react-redux";
-import { knowledgeSlice, userSlice } from "./slices";
+import { knowledgeSlice, questionsSlice, userSlice } from "./slices";
 
 export const store = configureStore({
   reducer: {
     user: userSlice,
     knowledge: knowledgeSlice,
+    questions: questionsSlice,
   },
   // Redux Toolkit includes thunk middleware by default
 });
