@@ -1,7 +1,6 @@
 // GET /api/questions
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import OpenAI from "openai";
 import dbConnect from "@/utils/dbConnect";
 import User from "@/models/User";
 import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0";
@@ -32,7 +31,7 @@ async function GetQuestion(req: NextApiRequest, res: NextApiResponse) {
     const { sub: auth0Id } = session.user;
 
     // Find user in database
-    let user = await User.findOne({ auth0Id });
+    const user = await User.findOne({ auth0Id });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }

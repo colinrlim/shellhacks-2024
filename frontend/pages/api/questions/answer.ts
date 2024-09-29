@@ -4,13 +4,6 @@ import { Question, User } from "@/models";
 import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0";
 import Topic from "@/models/Topic";
 import {
-  OPENAI_TOOLS,
-  QUESTION_ANSWERED_PROMPTS,
-  SYSTEM_METADATA_PROMPTS,
-} from "@/constants";
-import OpenAI from "openai";
-import { OpenAIProcessor } from "@/utils/OpenAIProcessor";
-import {
   INPUT_answer,
   Metadata_T,
   Question_T,
@@ -20,12 +13,8 @@ import {
   Topic_T,
 } from "@/utils/openai_endpoint";
 
-const client = new OpenAI({
-  apiKey: process.env["OPENAI_API_KEY"],
-});
-
 setSendMetadataFromDatabases(async (uid, session_id) => {
-  let metadata: Metadata_T = {
+  const metadata: Metadata_T = {
     current_topic: "",
     registered_topics: [],
     favorited_questions: [],
@@ -136,7 +125,7 @@ async function answerQuestionHandler(
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
-  const { questionId, selectedChoice, currentTopic } = req.body;
+  const { questionId, selectedChoice } = req.body;
 
   if (!questionId || !selectedChoice) {
     return res.status(400).json({ message: "Invalid request" });
@@ -163,7 +152,7 @@ async function answerQuestionHandler(
 
     await question.save();
 
-    let questionInterfaceData: Question_T = {
+    const questionInterfaceData: Question_T = {
       question: question.question,
       choice_1: question.choices["1"],
       choice_2: question.choices["2"],

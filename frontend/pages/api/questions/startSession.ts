@@ -1,16 +1,9 @@
 // PATCH /api/questions/setTopic
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import OpenAI from "openai";
 import dbConnect from "@/utils/dbConnect";
 import User from "@/models/User";
 import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0";
-import {
-  SET_TOPIC_PROMPTS,
-  SYSTEM_METADATA_PROMPTS,
-  OPENAI_TOOLS,
-} from "@/constants";
-import { OpenAIProcessor } from "@/utils/OpenAIProcessor";
 import Topic from "@/models/Topic";
 import {
   setOnExplanationReceiveData,
@@ -26,10 +19,6 @@ import {
   Response_T,
 } from "@/utils/openai_endpoint";
 import { Question } from "@/models";
-
-const client = new OpenAI({
-  apiKey: process.env["OPENAI_API_KEY"],
-});
 
 // Function Overrides
 
@@ -160,7 +149,7 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
 });
 // TODO Confirm this works as expected
 setSendMetadataFromDatabases(async (uid, session_id) => {
-  let metadata: Metadata_T = {
+  const metadata: Metadata_T = {
     current_topic: "",
     registered_topics: [],
     favorited_questions: [],
