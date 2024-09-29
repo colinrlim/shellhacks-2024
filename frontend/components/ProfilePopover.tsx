@@ -9,9 +9,12 @@ import {
   closeSettingsModal,
   openProfileModal,
   openSettingsModal,
+  openGraphModal,
+  closeGraphModal,
 } from "@/store/slices/uiSlice";
 import ProfileModal from "./ProfileModal";
 import SettingsModal from "./SettingsModal";
+import GraphModal from "./GraphModal";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { SlLogout } from "react-icons/sl";
 
@@ -40,6 +43,17 @@ const ProfilePopover: React.FC = () => {
     else {
       setIsHovered(false);
       dispatch(openSettingsModal());
+    }
+  };
+
+  const isGraphModalOpen = useAppSelector(
+    (state) => state.ui.isGraphModalOpen
+  );
+  const toggleGraphModal = () => {
+    if (isGraphModalOpen) dispatch(closeGraphModal());
+    else {
+      setIsHovered(false);
+      dispatch(openGraphModal());
     }
   };
 
@@ -102,6 +116,11 @@ const ProfilePopover: React.FC = () => {
         <span className="text-black truncate">{name}</span>
       </div>
 
+      <div
+      className="fixed bottom-4 right-4 z-50 border-gray-300 border rounded-md group hover:rounded-t-none overflow-hidden"
+      onClick={toggleGraphModal}
+    >Knowledge Graph</div>    
+
       {/* Profile Modal */}
       <ProfileModal isOpen={isProfileModalOpen} onClose={toggleProfileModal} />
 
@@ -109,6 +128,12 @@ const ProfilePopover: React.FC = () => {
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={toggleSettingsModal}
+      />
+
+      {/* Graph Modal */}
+      <GraphModal
+        isOpen={isGraphModalOpen}
+        onClose={toggleGraphModal}
       />
     </div>
   );

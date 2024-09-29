@@ -1,0 +1,437 @@
+"use client";
+import React, { useEffect, useRef, useState } from "react";
+import { Vector } from "@/types/Vector";
+import { Node, Edge } from "@/types/Nodes";
+import { useAppDispatch } from "@/store";
+import { useAppSelector } from "@/store/types";
+
+const r = 75;
+const kAttr = 0.0005;
+const kRep = 300;
+const kVert = 0.025;
+const damping = 0.1;
+const dt = 32; // in milliseconds
+
+// const initialNodes: Node[] = [
+//   { label: "Alpha", children: ["Beta", "Gamma"], prereqs: ["Psi", "Omega"] },
+//   { label: "Beta", children: ["Theta"], prereqs: ["Alpha", "Gamma"] },
+//   { label: "Gamma", children: ["Beta"], prereqs: ["Alpha"] },
+//   { label: "Psi", children: ["Alpha"], prereqs: [] },
+//   { label: "Omega", children: ["Alpha", "Theta"], prereqs: [] },
+//   { label: "Theta", children: [], prereqs: ["Beta", "Omega"] },
+// ];
+
+// const initialEdges: Edge[] = [
+//   { from: "Alpha", to: "Beta" },
+//   { from: "Alpha", to: "Gamma" },
+//   { from: "Omega", to: "Alpha" },
+//   { from: "Psi", to: "Alpha" },
+//   { from: "Gamma", to: "Beta" },
+//   { from: "Beta", to: "Theta" },
+//   { from: "Omega", to: "Theta" },
+// ];
+
+const Graph: React.FC = () => {
+  // parsing topics into nodes and edges
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const dispatch = useAppDispatch();
+  const topics = useAppSelector((state) => state.knowledge.topics);
+
+  // Convert topics object into an array with 'label' as the key name
+  const topicsArray = Object.entries(topics).map(([key, topic]) => ({
+    label: key, // Add the key as the 'label'
+    ...topic    // Spread the rest of the topic properties
+  }));
+  const nodesArray : Node[] = [];
+  for (const topic of topicsArray) {
+    const node : Node = {
+      label: topic.label,
+      children: [],
+      prereqs: [],
+    };
+    for (const rel of topic.relationships) {
+      for (const val of rel.value) {
+        node.children.push(val.child_topic);
+      }
+    }
+    nodesArray.push(node);
+  } 
+  for (const node of nodesArray) {
+    for (const child of node.children) {
+      for (const otherNode of nodesArray) {
+        if (otherNode.label === child && !otherNode.prereqs.includes(node.label))
+          otherNode.prereqs.push(node.label);
+      }
+    }
+  }
+
+  const edgesArray : Edge[] = [];
+  for (const node of nodesArray) {
+    for (const child of node.children) {
+      const newEdge : Edge = {from: node.label, to: child};
+      let exists = false;
+      for (const edge of edgesArray) {
+        if (JSON.stringify(edge) === JSON.stringify(newEdge)) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) edgesArray.push(newEdge);
+    }
+  }
+
+  console.log(nodesArray);
+
+  const [nodes, setNodes] = useState<Node[]>(nodesArray);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [edges, setEdges] = useState<Edge[]>(edgesArray);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    ctxRef.current = canvas.getContext("2d");
+
+    initializeGraph();
+
+    // Physics loop
+    const loop = setInterval(() => {
+      updatePhysics();
+      draw();
+    }, dt); // 30 fps
+
+    return () => clearInterval(loop);
+  }, []);
+
+  // Initialize positions for the root node and related nodes
+  const initializeGraph = () => {
+    const rootNode = nodes[0];
+    rootNode.position = new Vector(0,0);
+    rootNode.velocity = new Vector(0,0);
+    rootNode.level = 0;
+
+    assignRelatedPos(rootNode);
+  };
+
+  const assignRelatedPos = (node: Node) => {
+    const newNodes = [...nodes];
+    const connectedNodes: Node[] = [];
+
+    for (const connected of newNodes) {
+      if (
+        (node.children.includes(connected.label) ||
+          node.prereqs.includes(connected.label)) &&
+        connected.level === undefined
+      ) {
+        connectedNodes.push(connected);
+      }
+    }
+
+    for (const connected of connectedNodes) {
+      connected.level = (node.level || 0) + 1;
+      assignNodePos(connected, node);
+      assignRelatedPos(connected);
+    }
+
+    setNodes(newNodes);
+  };
+
+  const assignNodePos = (node: Node, prevNode: Node) => {
+    const R = r * (node.level || 1);
+    const prev : Vector = !(prevNode.position==undefined) ? prevNode.position : new Vector(0,0);
+    const rel = prevNode.children.includes(node.label) ? 1 : -1;
+
+    const pt = new Vector(0,0);
+    do {
+      pt.y = prev.y + rel * r * Math.random();
+      const randSign = Math.random() < 0.5 ? -1 : 1;
+      pt.x = Math.sqrt(Math.pow(R, 2) - Math.pow(pt.y, 2)) * randSign;
+    } while (checkEdgeIntersects(prev, pt));
+
+    node.position = pt;
+    node.velocity = new Vector(0,0);
+    node.initialPosition = pt;
+  };
+
+// To find orientation of ordered triplet (p, q, r).
+// The function returns following values
+// 0 --> p, q and r are collinear
+// 1 --> Clockwise
+// 2 --> Counterclockwise
+function doOrientation(p: Vector, q: Vector, r: Vector) {
+  const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+
+  if (val == 0) return 0; // collinear
+
+  return val > 0 ? 1 : 2; // clock or counterclock wise
+}
+
+function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
+  // Find the four orientations needed for general cases (special cases are eliminated here)
+  const o1 = doOrientation(p1, q1, p2);
+  const o2 = doOrientation(p1, q1, q2);
+  const o3 = doOrientation(p2, q2, p1);
+  const o4 = doOrientation(p2, q2, q1);
+
+  // General case
+  if (
+    (p1.x === p2.x && p1.y === p2.y) ||
+    (q1.x === q2.x && q1.y === q2.y) ||
+    (p1.x === q2.x && p1.y === q2.y) ||
+    (q1.x === p2.x && q1.y === p2.y)
+  )
+    return false; // edges from same node will never intersect because of graph structure
+  if (o1 != o2 && o3 != o4) return true;
+
+  return false; // Doesn't fall in any of the above cases
+}
+
+  const checkEdgeIntersects = (
+    p1: Vector,
+    p2: Vector
+  ) => {
+    let intersects = false;
+    for (const edge of edges) {
+      const from = nodes.find((node) => node.label === edge.from);
+      const to = nodes.find((node) => node.label === edge.to);
+      if (
+        from == undefined ||
+        to == undefined ||
+        from.position == undefined ||
+        to.position == undefined
+      )
+        continue;
+      const p3 = from.position;
+      const p4 = to.position;
+      if (doIntersect(p1, p2, p3, p4)) {
+        intersects = true;
+        break;
+      }
+    }
+    return intersects;
+  };
+
+  // Update physics
+  const updatePhysics = () => {
+    const newNodes = [...nodes];
+
+    for (const node of newNodes) {
+      if (node === newNodes[0] || node.level == undefined || node.position == undefined || node.velocity == undefined || node.initialPosition == undefined) continue;
+      const R = node.level * r;
+      const tanVect = new Vector(-node.position.y, node.position.x);
+      let fSum = new Vector(0,0);
+      for (const otherNode of newNodes) {
+        if (node === otherNode || otherNode.position == undefined) continue;
+        const dPos = node.position.subtract(otherNode.position);
+        const d3 = Math.pow(dPos.magnitude(), 3);
+        let fAttr;
+        if (
+          node.children.includes(otherNode.label) ||
+          node.prereqs.includes(otherNode.label)
+        ) {
+          fAttr = dPos.scale(-kAttr);
+        } else {
+          fAttr = new Vector(0,0);
+        }
+        const fRep = dPos.scale(kRep/d3);
+        fSum = fSum.add(fAttr.add(fRep));
+      }
+      fSum.y += kVert * Math.sign(node.position.y);
+      const proj = fSum.projectOnto(tanVect);
+      
+      node.velocity = node.velocity.add(proj.scale(dt));
+      node.velocity = node.velocity.scale(damping);
+      node.position = node.position.add(node.velocity.scale(dt));
+
+      // Keep nodes in their respective hemispheres
+      if (node.initialPosition.y > 0 && node.position.y < 0) {
+        node.position.y = Math.abs(node.position.y); // Upper hemisphere constraint
+      } else if (node.initialPosition.y < 0 && node.position.y > 0) {
+        node.position.y = -Math.abs(node.position.y); // Lower hemisphere constraint
+      }
+
+      // normalizing to radius
+      const D = node.position.magnitude();
+      const ratio = R / D;
+      node.position = node.position.scale(ratio);
+
+      const newTanVect = new Vector(-node.position.y, node.position.x);
+
+      // projecting velocity onto new tangent
+      node.velocity = node.velocity.projectOnto(newTanVect);
+
+      setNodes(newNodes);
+    }
+  };
+
+  // Drawing function
+  const draw = () => {
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+    for (const edge of edges) {
+      drawEdge(edge);
+    }
+    for (const node of nodes) {
+      drawNode(node);
+    }
+    for (const node of nodes) {
+      drawLabel(node);
+    }
+  };
+
+  const drawNode = (node: Node) => {
+    const ctx = ctxRef.current;
+    if (!ctx || node.position == undefined) return;
+
+    const offsetVect = new Vector(window.innerWidth / 2, window.innerHeight/2 );
+
+    ctx.beginPath();
+    const arcCenter = offsetVect.add(node.position);
+    ctx.arc(arcCenter.x, arcCenter.y, 10, 0, Math.PI * 2, true);
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "black";
+    ctx.fillStyle = "white";
+    ctx.fill();
+    ctx.stroke();
+  };
+
+  const drawEdge = (edge: Edge) => {
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+
+    const fromNode = nodes.find((n) => n.label === edge.from);
+    const toNode = nodes.find((n) => n.label === edge.to);
+    if (
+      !fromNode ||
+      !toNode ||
+      fromNode.position == undefined ||
+      toNode.position == undefined
+    )
+      return;
+
+    const offsetVect = new Vector(window.innerWidth / 2, window.innerHeight/2 );
+    ctx.fillStyle = "gray";
+    ctx.strokeStyle = "gray";
+    ctx.beginPath();
+    ctx.lineWidth = 4;
+    const start = offsetVect.add(fromNode.position);
+    const end = offsetVect.add(toNode.position);
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
+
+    drawArrow(fromNode, toNode);
+  };
+
+  function drawArrow(from : Node, to : Node) {
+    const ctx = ctxRef.current;
+    if (!ctx || to.position == undefined || from.position == undefined) return;
+
+    const offsetVect = new Vector(window.innerWidth / 2, window.innerHeight/2 );
+    const arrowOffset = 0.55;
+    const arrowWidth = 20;
+    const dVect = to.position.subtract(from.position);
+
+    const baseVect = from.position.add(dVect.scale(arrowOffset));
+  
+    const theta = Math.atan2(-dVect.x, dVect.y); // angle from positive x to base of arrow
+  
+    let p1 = new Vector(
+      baseVect.x + arrowWidth * 0.5 * Math.cos(theta),
+      baseVect.y + arrowWidth * 0.5 * Math.sin(theta)
+    );
+    let p2 = new Vector(
+      baseVect.x - arrowWidth * 0.866 * Math.sin(theta),
+      baseVect.y + arrowWidth * 0.866 * Math.cos(theta)
+    );
+    let p3 = new Vector(
+      baseVect.x - arrowWidth * 0.5 * Math.cos(theta),
+      baseVect.y - arrowWidth * 0.5 * Math.sin(theta)
+    );
+
+    p1 = p1.add(offsetVect);
+    p2 = p2.add(offsetVect);
+    p3 = p3.add(offsetVect);
+  
+    ctx.beginPath();
+    ctx.fillStyle = "gray";
+    ctx.strokeStyle = "gray";
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  const drawLabel = (node: Node) => {
+    const ctx = ctxRef.current;
+    if (!ctx || node.position == undefined) return;
+
+    const offsetVect = new Vector(window.innerWidth / 2, window.innerHeight/2 );
+    const textHeight = 20;
+    // const textBorder = 5;
+    
+    let textOffset : Vector;
+    if (node.position.x > 0)
+      textOffset = new Vector(16,0);
+    else
+      textOffset = new Vector(-16 - ctx.measureText(node.label).width, 0);
+
+    ctx.font = textHeight.toString() + "px Arial";
+    let textPos = node.position.add(offsetVect);
+  //   const clearW = ctx.measureText(node.label).width;
+  //   const clearH = textHeight;
+
+  // ctx.clearRect(
+  //   textPos.x - textBorder,
+  //   textPos.y + textBorder,
+  //   clearW + textBorder,
+  //   -clearH - textBorder
+  // );
+
+    ctx.fillStyle = "black";
+    textPos = textPos.add(textOffset);
+    ctx.fillText(node.label, textPos.x, textPos.y);
+  };
+
+  // Handle click events
+  const handleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mousePos = new Vector(event.clientX - rect.left, event.clientY - rect.top);
+
+    const offsetVect = new Vector(window.innerWidth / 2, window.innerHeight/2 );
+
+    // Check for clicks on nodes
+    nodes.forEach(node => {
+      if (node.position) {
+        const distance = Math.sqrt(
+          Math.pow(mousePos.x - (offsetVect.x + node.position.x), 2) +
+          Math.pow(mousePos.y - (offsetVect.y + node.position.y), 2)
+        );
+        if (distance < 10) { // Radius of the node
+          console.log(`Clicked on node: ${node.label}`);
+          // Add any additional logic on node click
+        }
+      }
+    });
+  };
+
+  if (nodesArray[0] == undefined) return ( <p>Nothing here yet. Go learn something!</p>);
+  return (
+    <canvas ref={canvasRef} onClick={handleClick}></canvas>
+  );
+};
+
+export default Graph;
