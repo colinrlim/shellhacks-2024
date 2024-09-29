@@ -69,7 +69,7 @@ let metadata = {
     console.log(`\nExplanation (uid: ${uid}, session_id: ${session_id}):`);
     console.log(explanation);
 });
-(0, openai_endpoint_1.setSendMetadataFromDatabases)(() => {
+(0, openai_endpoint_1.setSendMetadataFromDatabases)((uid, session_id) => {
     return metadata;
 });
 const rl = readline_1.default.createInterface({

@@ -12,7 +12,7 @@ type OnQuestionCreateReceiveDataType = (uid: string, session_id: string, questio
 type OnRegisterTopicReceiveDataType = (uid: string, session_id: string, opic_name: string, topic_description: string | null) => void;
 type OnRegisterRelationshipReceiveDataType = (uid: string, session_id: string, prereq_topic_name: string, child_topic_name: string, strength: number) => void;
 type OnExplanationReceiveDataType = (uid: string, session_id: string, explanation: string) => void;
-type SendMetadataFromDatabasesType = () => Metadata_T;
+type SendMetadataFromDatabasesType = (uid: string, session_id: string) => Metadata_T;
 
 // Create an object to hold the functions
 const functions = {
@@ -22,7 +22,7 @@ const functions = {
     onRegisterTopicReceiveData: (() => {}) as OnRegisterTopicReceiveDataType,
     onRegisterRelationshipReceiveData: (() => {}) as OnRegisterRelationshipReceiveDataType,
     onExplanationReceiveData: (() => {}) as OnExplanationReceiveDataType,
-    sendMetadataFromDatabases: (() => ({})) as SendMetadataFromDatabasesType
+    sendMetadataFromDatabases: ((uid: string, session_id: string) => {}) as SendMetadataFromDatabasesType
 };
 
 // Export the functions object
@@ -93,7 +93,7 @@ async function INPUT_answer(uid: string, session_id: string, question: Question_
     _send(uid, session_id, messages);
 }
 async function INPUT_favorite(uid: string, session_id: string, question_response: QuestionResponse_T) { // TODO: Add answers to favorites metadata
-    _generate_metadata().favorited_questions.value.push(_deep_copy(question_response));
+    _generate_metadata(uid, session_id).favorited_questions.value.push(_deep_copy(question_response));
 
     // Tell openai to dynamically generate new questions
     const messages = [
@@ -186,7 +186,7 @@ async function _send(uid: string, session_id: string, messages: any) { // DONE
     const MESSAGES_HEADER = [
         { role: "system", content: "Your role is to make questions for the user to answer in order to assess their understanding of the subject. The questions should be created with the additional goal of building the user's comprehension in the subject. After the user's first message, you are not allowed to say anything. You are only allowed to call the provided tools. You are discouraged from creating exceptionally lengthy questions." },
         { role: "system", content: "This education system works by generating questions to explore topics of the user's choosing. Each distinct topic should be noted by you in order to visualize a network, which consists of nodes that represent each topic. This visualization will aid the user's learning and ease of use. If the topic being explored is not listed in the metadata, please register it with a command." },
-        { role: "system", content: JSON.stringify({ system_metadata: _generate_metadata() }) }
+        { role: "system", content: JSON.stringify({ system_metadata: _generate_metadata(uid, session_id) }) }
     ];
     
     messages = MESSAGES_HEADER.concat(messages);
@@ -227,7 +227,7 @@ async function _send(uid: string, session_id: string, messages: any) { // DONE
                 role: "system",
                 content: "Though not visible to you, you responded to the user with commands, but did not generate any questions. Please only generate questions with your next response."
             });
-            messages[2].content = JSON.stringify({ system_metadata: _generate_metadata() });
+            messages[2].content = JSON.stringify({ system_metadata: _generate_metadata(uid, session_id) });
         }
     }
 
@@ -250,7 +250,7 @@ function _do_calls(uid: string, session_id: string, function_calls: _FunctionCal
             functions.onQuestionCreateReceiveData(uid, session_id, _deep_copy(new_question));
         } else if (function_call.name == "establish_topic") {           // Register topic DONE
             //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.name), false);
-            _generate_metadata()
+            _generate_metadata(uid, session_id)
 
             if (function_call.arguments.hasOwnProperty("prerequisite_topics")) { // add established topic as child topic of all of these
                 for (let i = 0; i < function_call.arguments.prerequisite_topics.length; i++) {
@@ -269,7 +269,7 @@ function _do_calls(uid: string, session_id: string, function_calls: _FunctionCal
                 }
             }
 
-            _generate_metadata().current_topic = function_call.arguments.name;
+            _generate_metadata(uid, session_id).current_topic = function_call.arguments.name;
         } else if (function_call.name == "establish_relationship") {      // Register node relationship DONE
             //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.prerequisite_topic ), true);
             //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.child_topic        ), true);
@@ -305,8 +305,8 @@ function _transform_question_response_array(question_response_array: QuestionRes
 
     return result;
 }
-function _generate_metadata(): _Metadata_Bot {
-    let metadata: Metadata_T = functions.sendMetadataFromDatabases();
+function _generate_metadata(uid: string, session_id: string): _Metadata_Bot {
+    let metadata: Metadata_T = functions.sendMetadataFromDatabases(uid, session_id);
     return {
         current_topic: {
             description:

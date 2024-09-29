@@ -79,7 +79,7 @@ setOnExplanationReceiveData((uid: string, session_id: string, explanation: strin
     console.log(explanation);
 });
 
-setSendMetadataFromDatabases((): Metadata_T => {
+setSendMetadataFromDatabases((uid: string, session_id: string): Metadata_T => {
     return metadata;
 });
 
