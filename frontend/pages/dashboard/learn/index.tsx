@@ -6,7 +6,6 @@ import { useAppSelector } from "@/store/types";
 import { getQuestions, startSession } from "@/store/slices/knowledgeSlice";
 import Question from "@/components/Question";
 import Loader from "@/components/Loader";
-import GraphModal from "@/components/GraphModal_old";
 
 function Learn() {
   const dispatch = useAppDispatch();

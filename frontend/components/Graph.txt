@@ -2,8 +2,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Vector } from "@/types/Vector";
 import { Node, Edge } from "@/types/Nodes";
-import { useAppDispatch } from "@/store";
-import { useAppSelector } from "@/store/types";
 
 const r = 75;
 const kAttr = 0.0005;
