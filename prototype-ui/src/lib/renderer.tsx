@@ -11,7 +11,6 @@ export function renderInitialize(manager: UIManager, init_objects: (manager: UIM
     useEffect(() => {
         if (manager.objects.length === 0) {
             init_objects(manager);
-            console.log("hhh")
         }
 
         const animate = () => {
@@ -31,6 +30,7 @@ export function renderInitialize(manager: UIManager, init_objects: (manager: UIM
         };
     }, [manager]);
 }
+
 export function renderManager(manager: UIManager) {
     return manager.objects.filter(obj => obj.isVisible).map(obj => renderObject(obj as UIBox | UITextbox | UIButton | UIFrame));
 }
@@ -38,74 +38,62 @@ export function renderManager(manager: UIManager) {
 function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
     if (!obj.isVisible) return null;
 
+    const commonStyles = {
+        position: 'absolute' as 'absolute',
+        left: `${obj.currentX}px`,
+        top: `${obj.currentY}px`,
+        opacity: obj.currentOpacity,
+        backgroundColor: obj.fillColor,
+        border: `${obj.outlineSize}px solid ${obj.outlineColor}`,
+        borderRadius: `${obj.borderRadius}px`,
+        color: obj.fontColor,
+    };
+
     if (obj instanceof UIFrame) {
         return (
             <div key={`frame-${obj.id}`} style={{
-            position: 'absolute',
-            left: `${obj.currentX}px`,
-            top: `${obj.currentY}px`,
-            border: `${obj.outlineSize}px solid ${obj.outlineColor}`,
-            borderRadius: `${obj.borderRadius}px`,
-            padding: '10px',
-            backgroundColor: obj.fillColor,
-            color: obj.fontColor,
+                ...commonStyles,
+                padding: '10px',
             }}>
-            {obj.children.map((child, index) => 
-                renderObject(child as UIBox | UITextbox | UIButton | UIFrame)
-            )}
+                {obj.children.map((child, index) => 
+                    renderObject(child as UIBox | UITextbox | UIButton | UIFrame)
+                )}
             </div>
         );
     } else if (obj instanceof UIBox) {
         return (
             <div key={`box-${obj.id}`} style={{
-            position: 'absolute',
-            left: `${obj.currentX}px`,
-            top: `${obj.currentY}px`,
-            width: `${obj.width}px`,
-            height: `${obj.height}px`,
-            backgroundColor: obj.fillColor,
-            border: `${obj.outlineSize}px solid ${obj.outlineColor}`,
-            borderRadius: `${obj.borderRadius}px`,
+                ...commonStyles,
+                width: `${obj.width}px`,
+                height: `${obj.height}px`,
             }} />
         );
     } else if (obj instanceof UITextbox) {
         return (
             <input
-            key={`textbox-${obj.id}`}
-            type="text"
-            value={obj.text}
-            onChange={(e) => obj.text = e.target.value}
-            onKeyDown={(e) => e.key === 'Enter' && obj.onEnter(obj.text)}
-            style={{
-                position: 'absolute',
-                left: `${obj.currentX}px`,
-                top: `${obj.currentY}px`,
-                padding: '5px',
-                backgroundColor: obj.fillColor,
-                border: `${obj.outlineSize}px solid ${obj.outlineColor}`,
-                borderRadius: `${obj.borderRadius}px`,
-                color: obj.fontColor,
-            }}
+                key={`textbox-${obj.id}`}
+                type="text"
+                value={obj.text}
+                onChange={(e) => obj.text = e.target.value}
+                onKeyDown={(e) => e.key === 'Enter' && obj.onEnter(obj.text)}
+                style={{
+                    ...commonStyles,
+                    padding: '5px',
+                }}
             />
         );
     } else if (obj instanceof UIButton) {
         return (
             <button
-            key={`button-${obj.id}`}
-            onClick={obj.onClick}
-            style={{
-                position: 'absolute',
-                left: `${obj.currentX}px`,
-                top: `${obj.currentY}px`,
-                padding: '10px',
-                backgroundColor: obj.fillColor,
-                border: `${obj.outlineSize}px solid ${obj.outlineColor}`,
-                borderRadius: `${obj.borderRadius}px`,
-                color: obj.fontColor,
-            }}
+                key={`button-${obj.id}`}
+                onClick={obj.onClick}
+                style={{
+                    ...commonStyles,
+                    padding: '10px',
+                }}
             >
-            {obj.text}
+                {obj.text}
             </button>
         );
     }
-};
+}

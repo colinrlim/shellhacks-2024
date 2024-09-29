@@ -1,5 +1,3 @@
-'use client';
-
 import { tween } from './tween';
 
 export interface UIObjectProps {
@@ -8,6 +6,8 @@ export interface UIObjectProps {
     startY: number;
     endX: number;
     endY: number;
+    startOpacity: number;
+    endOpacity: number;
     duration: number;
     easingStyle: string;
     easingDirection: string;
@@ -25,12 +25,15 @@ export class UIObject {
     startY: number;
     endX: number;
     endY: number;
+    startOpacity: number;
+    endOpacity: number;
     duration: number;
     easingStyle: string;
     easingDirection: string;
     isVisible: boolean;
     currentX: number;
     currentY: number;
+    currentOpacity: number;
     startTime: number;
     fillColor: string;
     outlineColor: string;
@@ -44,12 +47,15 @@ export class UIObject {
         this.startY = props.startY;
         this.endX = props.endX;
         this.endY = props.endY;
+        this.startOpacity = props.startOpacity;
+        this.endOpacity = props.endOpacity;
         this.duration = props.duration;
         this.easingStyle = props.easingStyle;
         this.easingDirection = props.easingDirection;
         this.isVisible = props.isVisible;
         this.currentX = props.startX;
         this.currentY = props.startY;
+        this.currentOpacity = props.startOpacity;
         this.startTime = Date.now();
         this.fillColor = props.fillColor;
         this.outlineColor = props.outlineColor;
@@ -65,6 +71,7 @@ export class UIObject {
 
         this.currentX = tween(this.startX, this.endX, interpolant, this.easingStyle, this.easingDirection);
         this.currentY = tween(this.startY, this.endY, interpolant, this.easingStyle, this.easingDirection);
+        this.currentOpacity = tween(this.startOpacity, this.endOpacity, interpolant, this.easingStyle, this.easingDirection);
 
         return interpolant < 1;
     }
@@ -72,6 +79,7 @@ export class UIObject {
     reset() {
         this.currentX = this.startX;
         this.currentY = this.startY;
+        this.currentOpacity = this.startOpacity;
         this.startTime = Date.now();
     }
 

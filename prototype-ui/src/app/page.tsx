@@ -16,7 +16,9 @@ export default function Home() {
             startY: 0,
             endX: 200,
             endY: 100,
-            duration: 2,
+            startOpacity: 0,
+            endOpacity: 1,
+            duration: 10,
             easingStyle: 'Elastic',
             easingDirection: 'Out',
             isVisible: true,
@@ -33,6 +35,8 @@ export default function Home() {
             startY: window.innerHeight - 100,
             endX: window.innerWidth / 2 - 75,
             endY: window.innerHeight - 100,
+            startOpacity: 1,
+            endOpacity: 1,
             duration: 1,
             easingStyle: 'Back',
             easingDirection: 'Out',
@@ -43,7 +47,7 @@ export default function Home() {
             fontColor: 'black',
             borderRadius: 5,
             text: 'Toggle Frame',
-            onClick: () => { box.toggleVisibility(); frame.reset() }
+            onClick: () => { frame.toggleVisibility(); frame.reset(); }
         });
 
         const box = new UIBox({
@@ -52,6 +56,8 @@ export default function Home() {
             startY: 0,
             endX: 100,
             endY: 50,
+            startOpacity: 0,
+            endOpacity: 1,
             duration: 2,
             easingStyle: 'Sine',
             easingDirection: 'InOut',
@@ -70,6 +76,8 @@ export default function Home() {
             startY: 60,
             endX: 0,
             endY: 110,
+            startOpacity: 0,
+            endOpacity: 1,
             duration: 1.5,
             easingStyle: 'Bounce',
             easingDirection: 'Out',
@@ -92,7 +100,7 @@ export default function Home() {
 
     return (
         <div style={{ position: 'relative', height: '100vh', overflow: 'hidden', backgroundColor: 'white' }}>
-        <h1 style={{ textAlign: 'center' }}>Tweened Animation Demo</h1>
+            <h1 style={{ textAlign: 'center' }}>Tweened Animation Demo</h1>
             {renderManager(manager)}
         </div>
     );
