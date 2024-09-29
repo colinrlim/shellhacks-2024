@@ -6,9 +6,17 @@ import { Claims } from "@auth0/nextjs-auth0";
 import { IQuestion } from "@/models/Question";
 import Topic, { ITopic } from "@/models/Topic";
 import { Relationship } from "@/types";
-import { GENERATE_QUESTION_PROMPT, SYSTEM_METADATA_PROMPTS } from "@/constants";
+import {
+  GENERATE_QUESTION_PROMPT,
+  OPENAI_TOOLS,
+  SYSTEM_METADATA_PROMPTS,
+} from "@/constants";
+import OpenAI from "openai";
 
 const { DEBUG_FLAG } = process.env;
+const client = new OpenAI({
+  apiKey: process.env["OPENAI_API_KEY"],
+});
 
 export async function OpenAIProcessor(
   sessionUser: Claims,
@@ -20,6 +28,7 @@ export async function OpenAIProcessor(
   depth: number = 0
 ) {
   try {
+    console.log("EXECUTING AT DEPTH" + depth);
     // Connect to Database
     await dbConnect();
 
@@ -49,6 +58,28 @@ export async function OpenAIProcessor(
     // @ts-ignore I don't know why its saying this
     const { tool_calls } = completion?.choices[0]?.message || "";
     if (!tool_calls || tool_calls.length === 0) {
+      // If a message is returned completion.choices[0].content != null
+
+      if (!completion?.choices[0]?.content) return {};
+      let message = completion.choices[0].content;
+      let newFallbackCompletion = await client.chatCompletion({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Please use the create_multiple_choice_question tool to generate 4 answer choices to this question.",
+          },
+          {
+            role: "assistant",
+            content: message,
+          },
+        ],
+        tools: [OPENAI_TOOLS[0]],
+      });
+
+      console.log(newFallbackCompletion);
+
       return {};
     }
 
@@ -58,10 +89,10 @@ export async function OpenAIProcessor(
       currentTopic: false,
       questionExplanation: false,
     };
-    if (DEBUG_FLAG) console.log(openAIChatCompletionObject);
+    if (!DEBUG_FLAG) console.log(openAIChatCompletionObject);
     for (let i = 0; i < tool_calls.length; i++) {
       let tool_call = tool_calls[i].function;
-      if (DEBUG_FLAG) console.log(tool_call);
+      if (!DEBUG_FLAG) console.log(tool_call);
       // Create multiple choice question
       if (tool_call.name === "create_multiple_choice_question") {
         let new_question = JSON.parse(tool_call.arguments);
@@ -316,20 +347,15 @@ export async function OpenAIProcessor(
         content: `{"system_metadata": ${JSON.stringify(metadata)}}`,
       };
     }
-
     if (!updateFlags.questions) {
-      if (depth > 6) {
+      if (depth > 12) {
         return res.status(500).json({
           message: "Failed to generate question after multiple attempts.",
           code: 200,
         });
-      } else if (depth > 3) {
+      } else if (depth > 4) {
         // @ts-ignore
-        openAIChatCompletionObject.messages.push({
-          role: "system",
-          content:
-            "Do not hallucinate. Reread all instructions and think before processing. Your next output MUST be a question to the user using provided data. The user is looking for a multiple choice question [weight-500]",
-        });
+        openAIChatCompletionObject.tools = [OPENAI_TOOLS[0]];
       }
 
       // @ts-ignore

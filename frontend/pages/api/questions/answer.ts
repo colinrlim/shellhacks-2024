@@ -165,7 +165,7 @@ async function answerQuestionHandler(
       res,
       openAIChatCompletionObject
     );
-
+    console.log(OpenAIFunctionResults);
     if (!OpenAIFunctionResults) {
       return res.status(200).json({ message: "No tool calls found" });
     }
