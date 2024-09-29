@@ -91,7 +91,7 @@ export default function Home() {
     });
 
     return (
-        <div style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
+        <div style={{ position: 'relative', height: '100vh', overflow: 'hidden', backgroundColor: 'white' }}>
         <h1 style={{ textAlign: 'center' }}>Tweened Animation Demo</h1>
             {renderManager(manager)}
         </div>

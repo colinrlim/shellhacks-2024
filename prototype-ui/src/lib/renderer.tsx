@@ -14,6 +14,7 @@ function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
             left: `${obj.currentX}px`,
             top: `${obj.currentY}px`,
             border: `${obj.outlineSize}px solid ${obj.outlineColor}`,
+            borderRadius: `${obj.borderRadius}px`,
             padding: '10px',
             backgroundColor: obj.fillColor,
             color: obj.fontColor,
@@ -33,6 +34,7 @@ function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
             height: `${obj.height}px`,
             backgroundColor: obj.fillColor,
             border: `${obj.outlineSize}px solid ${obj.outlineColor}`,
+            borderRadius: `${obj.borderRadius}px`,
             }} />
         );
     } else if (obj instanceof UITextbox) {
@@ -50,6 +52,7 @@ function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
                 padding: '5px',
                 backgroundColor: obj.fillColor,
                 border: `${obj.outlineSize}px solid ${obj.outlineColor}`,
+                borderRadius: `${obj.borderRadius}px`,
                 color: obj.fontColor,
             }}
             />
@@ -66,6 +69,7 @@ function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
                 padding: '10px',
                 backgroundColor: obj.fillColor,
                 border: `${obj.outlineSize}px solid ${obj.outlineColor}`,
+                borderRadius: `${obj.borderRadius}px`,
                 color: obj.fontColor,
             }}
             >
