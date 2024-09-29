@@ -3,7 +3,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
 import dbConnect from "@/utils/dbConnect";
-import { Question } from "@/models";
 import User from "@/models/User";
 import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0";
 import {
@@ -115,7 +114,8 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
       tools: OPENAI_TOOLS,
     };
 
-    // @ts-ignore
+    // @typescript-eslint/ban-ts-comment
+    // @ts-expect-error - I know that the completion is a string
     const completion = await client.chat.completions.create({
       ...openAIChatCompletionObject,
     });

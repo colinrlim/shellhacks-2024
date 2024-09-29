@@ -53,7 +53,6 @@ async function answerQuestionHandler(
     let cleanedHistoricalQuestions = JSON.parse(
       JSON.stringify(historicalQuestions)
     );
-    // @ts-ignore
     cleanedHistoricalQuestions = cleanedHistoricalQuestions.map((q) => {
       delete q.choices._id;
       return {
@@ -145,7 +144,8 @@ async function answerQuestionHandler(
       tools: OPENAI_TOOLS,
     };
 
-    // @ts-ignore
+    // @typescript-eslint/ban-ts-comment
+    // @ts-expect-error - I know that the completion is a string
     const completion = await client.chat.completions.create({
       ...openAIChatCompletionObject,
     });

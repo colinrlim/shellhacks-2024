@@ -127,6 +127,7 @@ export async function OpenAIProcessor(
         }
 
         // Check if relationship already exists
+        console.log(parentTopicExists.relationships);
         let relationshipExists = parentTopicExists.relationships.find(
           (relationship: Relationship) =>
             relationship.child_topic === childTopic
