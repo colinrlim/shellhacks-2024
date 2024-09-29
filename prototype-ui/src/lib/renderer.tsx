@@ -4,6 +4,37 @@ import React, { useEffect, useRef, useState } from 'react';
 import { UIBox, UITextbox, UIButton, UIFrame } from '@/lib/UIObjectTypes';
 import { UIManager } from './UIManager';
 
+export function renderInitialize(manager: UIManager, init_objects: (manager: UIManager) => void) {
+    const animationFrameRef = useRef<number>();
+    const [, setRenderTrigger] = useState({});
+
+    useEffect(() => {
+        if (manager.objects.length === 0) {
+            init_objects(manager);
+            console.log("hhh")
+        }
+
+        const animate = () => {
+            manager.updateObjects();
+            animationFrameRef.current = requestAnimationFrame(animate);
+            
+            setRenderTrigger({});
+        };
+
+        animationFrameRef.current = requestAnimationFrame(animate);
+
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+            manager.objects = [];
+        };
+    }, [manager]);
+}
+export function renderManager(manager: UIManager) {
+    return manager.objects.filter(obj => obj.isVisible).map(obj => renderObject(obj as UIBox | UITextbox | UIButton | UIFrame));
+}
+
 function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
     if (!obj.isVisible) return null;
 
@@ -78,33 +109,3 @@ function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
         );
     }
 };
-
-export function renderManager(manager: UIManager) {
-    return manager.objects.filter(obj => obj.isVisible).map(obj => renderObject(obj as UIBox | UITextbox | UIButton | UIFrame));
-}
-export function renderInitialize(manager: UIManager, init_objects: (manager: UIManager) => void) {
-    const animationFrameRef = useRef<number>();
-    const [, setRenderTrigger] = useState({});
-
-    useEffect(() => {
-        if (manager.objects.length === 0) {
-            init_objects(manager);
-        }
-
-        const animate = () => {
-            manager.updateObjects();
-            animationFrameRef.current = requestAnimationFrame(animate);
-            
-            setRenderTrigger({});
-        };
-
-        animationFrameRef.current = requestAnimationFrame(animate);
-
-        return () => {
-            if (animationFrameRef.current) {
-                cancelAnimationFrame(animationFrameRef.current);
-            }
-            manager.objects = [];
-        };
-    }, [manager]);
-}
