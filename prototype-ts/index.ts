@@ -28,19 +28,19 @@ let metadata: Metadata_T = {
 };
 
 // Set the functions
-setOnAnswerReceiveProcessedData((question_response: QuestionResponse_T): void => {
+setOnAnswerReceiveProcessedData((uid: string, question_response: QuestionResponse_T): void => {
     metadata.historical_questions.push(question_response);
-    console.log("\nAnswer processed. Historical questions updated.");
+    console.log(`\nAnswer processed (uid: ${uid}). Historical questions updated.`);
 });
 
-setOnFavoriteReceiveProcessedData((question_response: QuestionResponse_T): void => {
+setOnFavoriteReceiveProcessedData((uid: string, question_response: QuestionResponse_T): void => {
     metadata.favorited_questions.push(question_response);
-    console.log("Question favorited.");
+    console.log(`Question favorited (uid: ${uid}).`);
 });
 
-setOnQuestionCreateReceiveData((question: Question_T): void => {
+setOnQuestionCreateReceiveData((uid: string, question: Question_T): void => {
     questions.push(question);
-    console.log(`\nNew question (index ${questions.length - 1}):`);
+    console.log(`\nNew question (uid: ${uid}, index ${questions.length - 1}):`);
     console.log(question.question);
     console.log("1:", question.choice_1);
     console.log("2:", question.choice_2);
@@ -48,7 +48,7 @@ setOnQuestionCreateReceiveData((question: Question_T): void => {
     console.log("4:", question.choice_4);
 });
 
-setOnRegisterTopicReceiveData((topic_name: string, topic_description: string | null): void => {
+setOnRegisterTopicReceiveData((uid: string, topic_name: string, topic_description: string | null): void => {
     const existingTopic = metadata.registered_topics.find(topic => topic.name === topic_name);
     if (existingTopic) {
         if (topic_description) {
@@ -61,21 +61,21 @@ setOnRegisterTopicReceiveData((topic_name: string, topic_description: string | n
             relationships: []
         });
     }
-    console.log(`Topic "${topic_name}" registered or updated.`);
+    console.log(`Topic "${topic_name}" registered or updated (uid: ${uid}).`);
 });
 
-setOnRegisterRelationshipReceiveData((prereq_topic_name: string, child_topic_name: string, strength: number): void => {
+setOnRegisterRelationshipReceiveData((uid: string, prereq_topic_name: string, child_topic_name: string, strength: number): void => {
     const prereqTopic = metadata.registered_topics.find(topic => topic.name === prereq_topic_name);
     if (prereqTopic) {
         prereqTopic.relationships.push({ child_topic: child_topic_name, strength });
-        console.log(`Relationship registered: ${prereq_topic_name} -> ${child_topic_name} (strength: ${strength})`);
+        console.log(`Relationship registered: ${prereq_topic_name} -> ${child_topic_name} (strength: ${strength}, uid: ${uid})`);
     } else {
-        console.log(`Error: Prerequisite topic "${prereq_topic_name}" not found.`);
+        console.log(`Error: Prerequisite topic "${prereq_topic_name}" not found (uid: ${uid}).`);
     }
 });
 
-setOnExplanationReceiveData((explanation: string): void => {
-    console.log("\nExplanation:");
+setOnExplanationReceiveData((uid: string, explanation: string): void => {
+    console.log(`\nExplanation (uid: ${uid}):`);
     console.log(explanation);
 });
 
@@ -95,6 +95,8 @@ function listQuestions() {
     });
 }
 
+const uid: string = "8xd";
+
 rl.on("line", async (input) => {
     if (input.trim().toLowerCase() === "exit") {
         console.log("Goodbye!");
@@ -108,7 +110,7 @@ rl.on("line", async (input) => {
             const topic = args.join(" ");
             console.log(`Setting topic: ${topic}`);
             questions = []; // Clear previous questions when setting a new topic
-            await INPUT_start_session(topic);
+            await INPUT_start_session(uid, topic);
         } else if (command == "answer") {
             if (questions.length > 0) {
                 listQuestions();
@@ -132,7 +134,7 @@ rl.on("line", async (input) => {
                                     console.log("\nIncorrect. The correct answer was choice " + selectedQuestion.correct_choice + ".");
                                 }
 
-                                await INPUT_answer(selectedQuestion, response);
+                                await INPUT_answer(uid, selectedQuestion, response);
                             } else {
                                 console.log("Invalid answer. Please enter a number between 1 and 4.");
                             }
@@ -159,7 +161,7 @@ rl.on("line", async (input) => {
                                 is_correct: false
                             }
                         };
-                        await INPUT_favorite(questionResponse);
+                        await INPUT_favorite(uid, questionResponse);
                     } else {
                         console.log("Invalid question index. Please try again.");
                     }
