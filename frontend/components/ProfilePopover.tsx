@@ -11,7 +11,7 @@ import {
   openSettingsModal,
 } from "@/store/slices/uiSlice";
 import ProfileModal from "./ProfileModal";
-import GraphModal from "./GraphModal";
+// import GraphModal from "./GraphModal";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { SlLogout } from "react-icons/sl";
 import { PiGlobeSimple } from "react-icons/pi";
