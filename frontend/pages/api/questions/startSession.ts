@@ -49,7 +49,10 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     }
 
     // Get current topics for user
-    const topics = await Topic.find({ createdBy: auth0Id, session: sessionId });
+    const topics = await Topic.find({
+      createdBy: auth0Id,
+      sessionId: sessionId,
+    });
 
     // Clean topics to remove unnecessary fields (createdBy, _id)
     const cleanedTopics = topics.map((t) => {
@@ -94,7 +97,7 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
 
       {
         role: "system",
-        content: `{system_metadata: ${JSON.stringify(metadata)}}`,
+        content: `{"system_metadata": ${JSON.stringify(metadata)}}`,
       },
       {
         role: "user",
@@ -124,7 +127,8 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
       completion,
       topic,
       res,
-      openAIChatCompletionObject
+      openAIChatCompletionObject,
+      -1
     );
 
     if (!OpenAIFunctionResults) {

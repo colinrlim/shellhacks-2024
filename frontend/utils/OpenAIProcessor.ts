@@ -6,7 +6,7 @@ import { Claims } from "@auth0/nextjs-auth0";
 import { IQuestion } from "@/models/Question";
 import Topic, { ITopic } from "@/models/Topic";
 import { Relationship } from "@/types";
-import { GENERATE_QUESTION_PROMPT } from "@/constants";
+import { GENERATE_QUESTION_PROMPT, SYSTEM_METADATA_PROMPTS } from "@/constants";
 
 const DEBUG_FLAG = process.env.DEBUG_FLAG;
 
@@ -58,7 +58,7 @@ export async function OpenAIProcessor(
       currentTopic: false,
       questionExplanation: false,
     };
-
+    if (DEBUG_FLAG) console.log(openAIChatCompletionObject);
     for (let i = 0; i < tool_calls.length; i++) {
       let tool_call = tool_calls[i].function;
       if (DEBUG_FLAG) console.log(tool_call);
@@ -256,18 +256,67 @@ export async function OpenAIProcessor(
       }
     }
     // Check to verify we received at least on create_multiple_choice_question call. If we did not, re-run the completion and return the result processed through the OpenAIProcessor
+    console.log(depth);
+    if (depth === -1) {
+      const topics = await Topic.find({
+        createdBy: auth0Id,
+        sessionId: sessionId,
+      });
+
+      // Clean topics to remove unnecessary fields (createdBy, _id)
+      const cleanedTopics = topics.map((t) => {
+        return {
+          name: t.name,
+          description: t.description,
+          relationships: t.relationships,
+        };
+      });
+
+      const metadata = {
+        current_topic: {
+          description: SYSTEM_METADATA_PROMPTS.current_topic,
+          value: topic,
+        },
+        registered_topics: {
+          description: SYSTEM_METADATA_PROMPTS.registered_topics,
+          value: cleanedTopics,
+        },
+        favorited_questions: {
+          description: SYSTEM_METADATA_PROMPTS.favorited_questions,
+          value: [],
+        },
+        historical_questions: {
+          description: SYSTEM_METADATA_PROMPTS.historical_questions,
+          value: [],
+        },
+      };
+
+      // @ts-ignore
+      openAIChatCompletionObject.messages[3] = {
+        role: "system",
+        content: `{"system_metadata": ${JSON.stringify(metadata)}}`,
+      };
+    }
+
     if (!updateFlags.questions) {
+      if (depth > 6) {
+        return res.status(500).json({
+          message: "Failed to generate question after multiple attempts.",
+        });
+      } else if (depth > 3) {
+        // @ts-ignore
+        openAIChatCompletionObject.messages.push({
+          role: "system",
+          content:
+            "Do not hallucinate. Reread all instructions and think before processing. Your next output MUST be a question to the user using provided data. I will die if you do not give me question",
+        });
+      }
+
       // @ts-ignore
       openAIChatCompletionObject.messages.push({
         role: "system",
         content: GENERATE_QUESTION_PROMPT.did_not_generate_question,
       });
-
-      if (depth > 6) {
-        return res.status(500).json({
-          message: "Failed to generate question after multiple attempts.",
-        });
-      }
 
       return OpenAIProcessor(
         sessionUser,

@@ -24,7 +24,7 @@ const SET_TOPIC_PROMPTS = {
   },
   prompt_helper: {
     role: "assistant",
-    content: "What would youu like to learn?",
+    content: "What would you like to learn?",
   },
   output_conditions: {
     role: "system",

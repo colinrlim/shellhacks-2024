@@ -39,7 +39,6 @@ async function answerQuestionHandler(
     const { sub: auth0Id } = session.user;
 
     const question = await Question.findById(questionId);
-    console.log(question);
     if (!question) {
       return res.status(404).json({ message: "Question not found" });
     }
@@ -50,16 +49,46 @@ async function answerQuestionHandler(
       isCorrect: true,
       sessionId: sessionId,
     });
+    // i ne4ed to clean the historical questions to remove the _id and createdBy fields
+    let cleanedHistoricalQuestions = JSON.parse(
+      JSON.stringify(historicalQuestions)
+    );
+    // @ts-ignore
+    cleanedHistoricalQuestions = cleanedHistoricalQuestions.map((q) => {
+      delete q.choices._id;
+      return {
+        question: q.question,
+        choices: q.choices,
+        correctChoice: q.correctChoice,
+        selectedChoice: q.selectedChoice,
+        isCorrect: q.isCorrect,
+      };
+    });
+
+    console.log("\n\n\n cleanedHistoricalQuestions");
+    console.log(JSON.stringify(cleanedHistoricalQuestions));
 
     question.isCorrect = question.correctChoice === selectedChoice;
     question.selectedChoice = selectedChoice;
 
     await question.save();
 
-    delete question._id;
+    const cleanedQestionChoices = Object.entries(question.choices).filter(
+      ([key]) => !isNaN(Number(key))
+    );
+    const cleanedQuestion = {
+      question: question.question,
+      choices: cleanedQestionChoices,
+      correctChoice: question.correctChoice,
+      selectedChoice: question.selectedChoice,
+      isCorrect: question.isCorrect,
+    };
 
     // Now I need to build an openai call to update the learning modules
-    const topics = await Topic.find({ createdBy: auth0Id });
+    const topics = await Topic.find({
+      createdBy: auth0Id,
+      sessionId: sessionId,
+    });
     const cleanedTopics = topics.map((t) => {
       return {
         name: t.name,
@@ -83,7 +112,7 @@ async function answerQuestionHandler(
       },
       historical_questions: {
         description: SYSTEM_METADATA_PROMPTS.historical_questions,
-        value: historicalQuestions,
+        value: cleanedHistoricalQuestions,
       },
     };
 
@@ -98,11 +127,11 @@ async function answerQuestionHandler(
       },
       {
         role: "system",
-        content: `{system_metadata: ${JSON.stringify(metadata)}}`,
+        content: `{"system_metadata": ${JSON.stringify(metadata)}}`,
       },
       {
         role: "system",
-        content: `{current_question: ${JSON.stringify(question)}}`,
+        content: `{"current_question": ${JSON.stringify(cleanedQuestion)}}`,
       },
       {
         role: QUESTION_ANSWERED_PROMPTS.prompt_directions.role,
