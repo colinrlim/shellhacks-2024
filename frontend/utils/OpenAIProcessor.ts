@@ -174,7 +174,7 @@ export async function OpenAIProcessor(
           topic = newTopic.name;
           updateFlags.topics = true;
         }
-        const tArgs = tool_call.arguments;
+        const tArgs = JSON.parse(tool_call.arguments);
 
         // Check for prerequisite topics
         if (tArgs.hasOwnProperty("prerequisite_topics")) {

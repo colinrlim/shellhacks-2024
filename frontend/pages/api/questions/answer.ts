@@ -140,7 +140,7 @@ async function answerQuestionHandler(
     ];
 
     const openAIChatCompletionObject = {
-      model: "gpt-4o-mini",
+      model: process.env.OPENAI_MODEL,
       messages: payload,
       tools: OPENAI_TOOLS,
     };

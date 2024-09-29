@@ -110,7 +110,7 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     ];
 
     const openAIChatCompletionObject = {
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: payload,
       tools: OPENAI_TOOLS,
     };
