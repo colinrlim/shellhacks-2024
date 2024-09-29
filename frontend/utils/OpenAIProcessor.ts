@@ -6,9 +6,17 @@ import { Claims } from "@auth0/nextjs-auth0";
 import { IQuestion } from "@/models/Question";
 import Topic, { ITopic } from "@/models/Topic";
 import { Relationship } from "@/types";
-import { GENERATE_QUESTION_PROMPT, SYSTEM_METADATA_PROMPTS } from "@/constants";
+import {
+  GENERATE_QUESTION_PROMPT,
+  OPENAI_TOOLS,
+  SYSTEM_METADATA_PROMPTS,
+} from "@/constants";
+import OpenAI from "openai";
 
-const DEBUG_FLAG = process.env.DEBUG_FLAG;
+const { DEBUG_FLAG } = process.env;
+const client = new OpenAI({
+  apiKey: process.env["OPENAI_API_KEY"],
+});
 
 export async function OpenAIProcessor(
   sessionUser: Claims,
@@ -20,6 +28,7 @@ export async function OpenAIProcessor(
   depth: number = 0
 ) {
   try {
+    console.log("EXECUTING AT DEPTH" + depth);
     // Connect to Database
     await dbConnect();
 
@@ -49,7 +58,9 @@ export async function OpenAIProcessor(
     // @ts-ignore I don't know why its saying this
     const { tool_calls } = completion?.choices[0]?.message || "";
     if (!tool_calls || tool_calls.length === 0) {
-      return {};
+      // If a message is returned completion.choices[0].content != null
+      console.log("N\n\n\nO TOOLS!");
+      depth = 13;
     }
 
     const updateFlags = {
@@ -316,36 +327,41 @@ export async function OpenAIProcessor(
         content: `{"system_metadata": ${JSON.stringify(metadata)}}`,
       };
     }
-
     if (!updateFlags.questions) {
-      if (depth > 6) {
-        return res.status(500).json({
-          message: "Failed to generate question after multiple attempts.",
-        });
-      } else if (depth > 3) {
+      if (depth > 12) {
+        // If we get to a depth of 12, we will use a different method in order to generate a question
+
+        await Question.create({
+          question: `I am having trouble generating a learning path. Could you confirm you would like to learn about ${topic}? If not, I can try to analyze your question again.`,
+          choices: {
+            1: "YES",
+            2: "NO",
+          },
+          correctChoice: 1,
+          createdBy: auth0Id,
+          sessionId,
+          topic,
+        }).catch((e) => console.log(e));
+
+        // Update flags
+        updateFlags.questions = true;
+      } else {
         // @ts-ignore
         openAIChatCompletionObject.messages.push({
           role: "system",
-          content:
-            "Do not hallucinate. Reread all instructions and think before processing. Your next output MUST be a question to the user using provided data. The user is looking for a multiple choice question [weight-500]",
+          content: GENERATE_QUESTION_PROMPT.did_not_generate_question,
         });
+
+        return OpenAIProcessor(
+          sessionUser,
+          sessionId,
+          completion,
+          topic,
+          res,
+          openAIChatCompletionObject,
+          depth + 1
+        );
       }
-
-      // @ts-ignore
-      openAIChatCompletionObject.messages.push({
-        role: "system",
-        content: GENERATE_QUESTION_PROMPT.did_not_generate_question,
-      });
-
-      return OpenAIProcessor(
-        sessionUser,
-        sessionId,
-        completion,
-        topic,
-        res,
-        openAIChatCompletionObject,
-        depth + 1
-      );
     }
 
     // Craft a response that has the updates made so the client can update the redux store

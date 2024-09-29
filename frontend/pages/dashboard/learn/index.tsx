@@ -67,6 +67,13 @@ function Learn() {
           {error && (
             <div className="mb-4 text-red-500">
               <p>Error: {error}</p>
+
+              <button
+                className="mt-2 bg-red-500 text-white px-4 py-2 rounded"
+                onClick={() => router.push("/")}
+              >
+                Go Home
+              </button>
             </div>
           )}
 
