@@ -6,12 +6,12 @@ const OPENAI_KEY =
 const openai = new OpenAI({ apiKey: OPENAI_KEY });
 
 // Function types
-type OnAnswerReceiveProcessedDataType = (uid: string, question_response: QuestionResponse_T) => void;
-type OnFavoriteReceiveProcessedDataType = (uid: string, question_response: QuestionResponse_T) => void;
-type OnQuestionCreateReceiveDataType = (uid: string, question: Question_T) => void;
-type OnRegisterTopicReceiveDataType = (uid: string, opic_name: string, topic_description: string | null) => void;
-type OnRegisterRelationshipReceiveDataType = (uid: string, prereq_topic_name: string, child_topic_name: string, strength: number) => void;
-type OnExplanationReceiveDataType = (uid: string, explanation: string) => void;
+type OnAnswerReceiveProcessedDataType = (uid: string, session_id: string, question_response: QuestionResponse_T) => void;
+type OnFavoriteReceiveProcessedDataType = (uid: string, session_id: string, question_response: QuestionResponse_T) => void;
+type OnQuestionCreateReceiveDataType = (uid: string, session_id: string, question: Question_T) => void;
+type OnRegisterTopicReceiveDataType = (uid: string, session_id: string, opic_name: string, topic_description: string | null) => void;
+type OnRegisterRelationshipReceiveDataType = (uid: string, session_id: string, prereq_topic_name: string, child_topic_name: string, strength: number) => void;
+type OnExplanationReceiveDataType = (uid: string, session_id: string, explanation: string) => void;
 type SendMetadataFromDatabasesType = () => Metadata_T;
 
 // Create an object to hold the functions
@@ -52,16 +52,16 @@ export type {
     QuestionResponse_T
 }
 
-async function INPUT_start_session(uid: string, query: string) {
+async function INPUT_start_session(uid: string, session_id: string, query: string) {
     const messages = [
         { role: "assistant", content: "What would you like to learn?" },
         { role: "user", content: query, },
         { role: "system", content: "Your calls MUST include at least one generated question." },
     ];
 
-    await _send(uid, messages);
+    await _send(uid, session_id, messages);
 }
-async function INPUT_answer(uid: string, question: Question_T, answer: Response_T) {
+async function INPUT_answer(uid: string, session_id: string, question: Question_T, answer: Response_T) {
     // Fill current_question with question & user response
     //console.log(questions);
     //console.log(questionID);
@@ -89,10 +89,10 @@ async function INPUT_answer(uid: string, question: Question_T, answer: Response_
         { role: "system", content: "If the user answered the question incorrectly, call a function to provide an explanation to allow the user to comprehend why their response was incorrect, and why the actual answer is correct. Regardless of whether the user answered the question correctly or not, generate new questions by taking the user's performance and weaknesses into account and, potentially, register a new topic if you feel it is the most beneficial course of action for the user to achieve their implied comprehension goals. If you analyze that the user is performing worse than expected, you consider either lower the difficulty of newer generated questions or switch the topic to a prerequisite in order to help build their fundamentals. If the user appears to be performing better than expected, consider either raise the difficulty of newer generated questions or even switch the topic to a more advanced one that the current topic is foundational to. Questions should be created with the intention to fix user intuition and comprehension as effectively as possible. It is Your response must include at least one new generated question." }
     ];
 
-    functions.onAnswerReceiveProcessedData(uid, current_response);
-    _send(uid, messages);
+    functions.onAnswerReceiveProcessedData(uid, session_id, current_response);
+    _send(uid, session_id, messages);
 }
-async function INPUT_favorite(uid: string, question_response: QuestionResponse_T) { // TODO: Add answers to favorites metadata
+async function INPUT_favorite(uid: string, session_id: string, question_response: QuestionResponse_T) { // TODO: Add answers to favorites metadata
     _generate_metadata().favorited_questions.value.push(_deep_copy(question_response));
 
     // Tell openai to dynamically generate new questions
@@ -101,8 +101,8 @@ async function INPUT_favorite(uid: string, question_response: QuestionResponse_T
         { role: "system", content: "The user has just favorited a new question. Generate new questions by taking this newly favorited question alongside the user's performance and weaknesses into account and, potentially, register a new topic if you feel it is the most beneficial course of action for the user to achieve their implied comprehension goals. If you analyze that the user is performing worse than expected, you consider either lower the difficulty of newer generated questions or switch the topic to a prerequisite in order to help build their fundamentals. If the user appears to be performing better than expected, consider either raise the difficulty of newer generated questions or even switch the topic to a more advanced one that the current topic is foundational to. Questions should be created with the intention to fix user intuition and comprehension as effectively as possible. Your response must include at least one new generated question."}
     ];
 
-    functions.onFavoriteReceiveProcessedData(uid, question_response);
-    _send(uid, messages);
+    functions.onFavoriteReceiveProcessedData(uid, session_id, question_response);
+    _send(uid, session_id, messages);
 }
 
 interface Relationship_T {
@@ -182,7 +182,7 @@ type _FunctionCallUnparsed_Bot = {
     }
 };
 
-async function _send(uid: string, messages: any) { // DONE
+async function _send(uid: string, session_id: string, messages: any) { // DONE
     const MESSAGES_HEADER = [
         { role: "system", content: "Your role is to make questions for the user to answer in order to assess their understanding of the subject. The questions should be created with the additional goal of building the user's comprehension in the subject. After the user's first message, you are not allowed to say anything. You are only allowed to call the provided tools. You are discouraged from creating exceptionally lengthy questions." },
         { role: "system", content: "This education system works by generating questions to explore topics of the user's choosing. Each distinct topic should be noted by you in order to visualize a network, which consists of nodes that represent each topic. This visualization will aid the user's learning and ease of use. If the topic being explored is not listed in the metadata, please register it with a command." },
@@ -208,7 +208,7 @@ async function _send(uid: string, messages: any) { // DONE
         console.log(result);
 
         if (result) {
-            _do_calls(uid, result);
+            _do_calls(uid, session_id, result);
             
             // Add used function names to the used_functions array
             result.forEach(call => {
@@ -234,7 +234,7 @@ async function _send(uid: string, messages: any) { // DONE
     return result;
 }
 
-function _do_calls(uid: string, function_calls: _FunctionCallUnparsed_Bot[]): void { // DONE
+function _do_calls(uid: string, session_id: string, function_calls: _FunctionCallUnparsed_Bot[]): void { // DONE
     if (function_calls == null) return;
     for (let i = 0; i < function_calls.length; i++) {
         // Just parse the JSON string into real JSON
@@ -247,7 +247,7 @@ function _do_calls(uid: string, function_calls: _FunctionCallUnparsed_Bot[]): vo
 
         if (function_call.name == "create_multiple_choice_question") {  // Create question DONE
             let new_question: Question_T = function_call.arguments;
-            functions.onQuestionCreateReceiveData(uid, _deep_copy(new_question));
+            functions.onQuestionCreateReceiveData(uid, session_id, _deep_copy(new_question));
         } else if (function_call.name == "establish_topic") {           // Register topic DONE
             //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.name), false);
             _generate_metadata()
@@ -256,16 +256,16 @@ function _do_calls(uid: string, function_calls: _FunctionCallUnparsed_Bot[]): vo
                 for (let i = 0; i < function_call.arguments.prerequisite_topics.length; i++) {
                     let curr_topic = function_call.arguments.prerequisite_topics[i];
 
-                    functions.onRegisterTopicReceiveData(uid, curr_topic.name, curr_topic.description);
-                    functions.onRegisterRelationshipReceiveData(uid, curr_topic.name, function_call.arguments.name, curr_topic.strength);
+                    functions.onRegisterTopicReceiveData(uid, session_id, curr_topic.name, curr_topic.description);
+                    functions.onRegisterRelationshipReceiveData(uid, session_id, curr_topic.name, function_call.arguments.name, curr_topic.strength);
                 }
             }
             if (function_call.arguments.hasOwnProperty("child_topics")) { // add all of these as child topics of established topic
                 for (let i = 0; i < function_call.arguments.child_topics.length; i++) {
                     let curr_topic = function_call.arguments.child_topics[i];
 
-                    functions.onRegisterTopicReceiveData(uid, function_call.arguments.name, function_call.arguments.description);
-                    functions.onRegisterRelationshipReceiveData(uid, function_call.arguments.name, curr_topic.name, curr_topic.strength);
+                    functions.onRegisterTopicReceiveData(uid, session_id, function_call.arguments.name, function_call.arguments.description);
+                    functions.onRegisterRelationshipReceiveData(uid, session_id, function_call.arguments.name, curr_topic.name, curr_topic.strength);
                 }
             }
 
@@ -274,10 +274,10 @@ function _do_calls(uid: string, function_calls: _FunctionCallUnparsed_Bot[]): vo
             //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.prerequisite_topic ), true);
             //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.child_topic        ), true);
             
-            functions.onRegisterTopicReceiveData(uid, function_call.arguments.prerequisite_topic, null);
-            functions.onRegisterRelationshipReceiveData(uid, function_call.arguments.prerequisite_topic, function_call.arguments.child_topic, function_call.arguments.strength);
+            functions.onRegisterTopicReceiveData(uid, session_id, function_call.arguments.prerequisite_topic, null);
+            functions.onRegisterRelationshipReceiveData(uid, session_id, function_call.arguments.prerequisite_topic, function_call.arguments.child_topic, function_call.arguments.strength);
         } else if (function_call.name == "explain_question") {
-            functions.onExplanationReceiveData(uid, function_call.arguments.explanation);
+            functions.onExplanationReceiveData(uid, session_id, function_call.arguments.explanation);
         }
     }
 }

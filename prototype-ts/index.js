@@ -22,24 +22,24 @@ let metadata = {
     historical_questions: []
 };
 // Set the functions
-(0, openai_endpoint_1.setOnAnswerReceiveProcessedData)((uid, question_response) => {
+(0, openai_endpoint_1.setOnAnswerReceiveProcessedData)((uid, session_id, question_response) => {
     metadata.historical_questions.push(question_response);
-    console.log(`\nAnswer processed (uid: ${uid}). Historical questions updated.`);
+    console.log(`\nAnswer processed (uid: ${uid}, session_id: ${session_id}). Historical questions updated.`);
 });
-(0, openai_endpoint_1.setOnFavoriteReceiveProcessedData)((uid, question_response) => {
+(0, openai_endpoint_1.setOnFavoriteReceiveProcessedData)((uid, session_id, question_response) => {
     metadata.favorited_questions.push(question_response);
-    console.log(`Question favorited (uid: ${uid}).`);
+    console.log(`Question favorited (uid: ${uid}, session_id: ${session_id}).`);
 });
-(0, openai_endpoint_1.setOnQuestionCreateReceiveData)((uid, question) => {
+(0, openai_endpoint_1.setOnQuestionCreateReceiveData)((uid, session_id, question) => {
     questions.push(question);
-    console.log(`\nNew question (uid: ${uid}, index ${questions.length - 1}):`);
+    console.log(`\nNew question (uid: ${uid}, session_id: ${session_id}, index ${questions.length - 1}):`);
     console.log(question.question);
     console.log("1:", question.choice_1);
     console.log("2:", question.choice_2);
     console.log("3:", question.choice_3);
     console.log("4:", question.choice_4);
 });
-(0, openai_endpoint_1.setOnRegisterTopicReceiveData)((uid, topic_name, topic_description) => {
+(0, openai_endpoint_1.setOnRegisterTopicReceiveData)((uid, session_id, topic_name, topic_description) => {
     const existingTopic = metadata.registered_topics.find(topic => topic.name === topic_name);
     if (existingTopic) {
         if (topic_description) {
@@ -53,20 +53,20 @@ let metadata = {
             relationships: []
         });
     }
-    console.log(`Topic "${topic_name}" registered or updated (uid: ${uid}).`);
+    console.log(`Topic "${topic_name}" registered or updated (uid: ${uid}, session_id: ${session_id}).`);
 });
-(0, openai_endpoint_1.setOnRegisterRelationshipReceiveData)((uid, prereq_topic_name, child_topic_name, strength) => {
+(0, openai_endpoint_1.setOnRegisterRelationshipReceiveData)((uid, session_id, prereq_topic_name, child_topic_name, strength) => {
     const prereqTopic = metadata.registered_topics.find(topic => topic.name === prereq_topic_name);
     if (prereqTopic) {
         prereqTopic.relationships.push({ child_topic: child_topic_name, strength });
-        console.log(`Relationship registered: ${prereq_topic_name} -> ${child_topic_name} (strength: ${strength}, uid: ${uid})`);
+        console.log(`Relationship registered: ${prereq_topic_name} -> ${child_topic_name} (strength: ${strength}, uid: ${uid}, session_id: ${session_id})`);
     }
     else {
-        console.log(`Error: Prerequisite topic "${prereq_topic_name}" not found (uid: ${uid}).`);
+        console.log(`Error: Prerequisite topic "${prereq_topic_name}" not found (uid: ${uid}, session_id: ${session_id}).`);
     }
 });
-(0, openai_endpoint_1.setOnExplanationReceiveData)((uid, explanation) => {
-    console.log(`\nExplanation (uid: ${uid}):`);
+(0, openai_endpoint_1.setOnExplanationReceiveData)((uid, session_id, explanation) => {
+    console.log(`\nExplanation (uid: ${uid}, session_id: ${session_id}):`);
     console.log(explanation);
 });
 (0, openai_endpoint_1.setSendMetadataFromDatabases)(() => {
@@ -82,7 +82,8 @@ function listQuestions() {
         console.log(`[${index}] ${question.question}`);
     });
 }
-const uid = "8xd";
+const uid = "colin";
+const session_id = "m93kn-1359";
 rl.on("line", (input) => __awaiter(void 0, void 0, void 0, function* () {
     if (input.trim().toLowerCase() === "exit") {
         console.log("Goodbye!");
@@ -96,7 +97,7 @@ rl.on("line", (input) => __awaiter(void 0, void 0, void 0, function* () {
             const topic = args.join(" ");
             console.log(`Setting topic: ${topic}`);
             questions = []; // Clear previous questions when setting a new topic
-            yield (0, openai_endpoint_1.INPUT_start_session)(uid, topic);
+            yield (0, openai_endpoint_1.INPUT_start_session)(uid, session_id, topic);
         }
         else if (command == "answer") {
             if (questions.length > 0) {
@@ -120,7 +121,7 @@ rl.on("line", (input) => __awaiter(void 0, void 0, void 0, function* () {
                                 else {
                                     console.log("\nIncorrect. The correct answer was choice " + selectedQuestion.correct_choice + ".");
                                 }
-                                yield (0, openai_endpoint_1.INPUT_answer)(uid, selectedQuestion, response);
+                                yield (0, openai_endpoint_1.INPUT_answer)(uid, session_id, selectedQuestion, response);
                             }
                             else {
                                 console.log("Invalid answer. Please enter a number between 1 and 4.");
@@ -151,7 +152,7 @@ rl.on("line", (input) => __awaiter(void 0, void 0, void 0, function* () {
                                 is_correct: false
                             }
                         };
-                        yield (0, openai_endpoint_1.INPUT_favorite)(uid, questionResponse);
+                        yield (0, openai_endpoint_1.INPUT_favorite)(uid, session_id, questionResponse);
                     }
                     else {
                         console.log("Invalid question index. Please try again.");

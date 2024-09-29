@@ -45,17 +45,17 @@ const setOnExplanationReceiveData = (fn) => { functions.onExplanationReceiveData
 exports.setOnExplanationReceiveData = setOnExplanationReceiveData;
 const setSendMetadataFromDatabases = (fn) => { functions.sendMetadataFromDatabases = fn; };
 exports.setSendMetadataFromDatabases = setSendMetadataFromDatabases;
-function INPUT_start_session(uid, query) {
+function INPUT_start_session(uid, session_id, query) {
     return __awaiter(this, void 0, void 0, function* () {
         const messages = [
             { role: "assistant", content: "What would you like to learn?" },
             { role: "user", content: query, },
             { role: "system", content: "Your calls MUST include at least one generated question." },
         ];
-        yield _send(uid, messages);
+        yield _send(uid, session_id, messages);
     });
 }
-function INPUT_answer(uid, question, answer) {
+function INPUT_answer(uid, session_id, question, answer) {
     return __awaiter(this, void 0, void 0, function* () {
         // Fill current_question with question & user response
         //console.log(questions);
@@ -80,11 +80,11 @@ function INPUT_answer(uid, question, answer) {
             { role: "system", content: JSON.stringify({ current_question: _transform_question_response(current_response) }) },
             { role: "system", content: "If the user answered the question incorrectly, call a function to provide an explanation to allow the user to comprehend why their response was incorrect, and why the actual answer is correct. Regardless of whether the user answered the question correctly or not, generate new questions by taking the user's performance and weaknesses into account and, potentially, register a new topic if you feel it is the most beneficial course of action for the user to achieve their implied comprehension goals. If you analyze that the user is performing worse than expected, you consider either lower the difficulty of newer generated questions or switch the topic to a prerequisite in order to help build their fundamentals. If the user appears to be performing better than expected, consider either raise the difficulty of newer generated questions or even switch the topic to a more advanced one that the current topic is foundational to. Questions should be created with the intention to fix user intuition and comprehension as effectively as possible. It is Your response must include at least one new generated question." }
         ];
-        functions.onAnswerReceiveProcessedData(uid, current_response);
-        _send(uid, messages);
+        functions.onAnswerReceiveProcessedData(uid, session_id, current_response);
+        _send(uid, session_id, messages);
     });
 }
-function INPUT_favorite(uid, question_response) {
+function INPUT_favorite(uid, session_id, question_response) {
     return __awaiter(this, void 0, void 0, function* () {
         _generate_metadata().favorited_questions.value.push(_deep_copy(question_response));
         // Tell openai to dynamically generate new questions
@@ -92,8 +92,8 @@ function INPUT_favorite(uid, question_response) {
             { role: "system", content: JSON.stringify({ recent_favorite: _transform_question_response(question_response) }) },
             { role: "system", content: "The user has just favorited a new question. Generate new questions by taking this newly favorited question alongside the user's performance and weaknesses into account and, potentially, register a new topic if you feel it is the most beneficial course of action for the user to achieve their implied comprehension goals. If you analyze that the user is performing worse than expected, you consider either lower the difficulty of newer generated questions or switch the topic to a prerequisite in order to help build their fundamentals. If the user appears to be performing better than expected, consider either raise the difficulty of newer generated questions or even switch the topic to a more advanced one that the current topic is foundational to. Questions should be created with the intention to fix user intuition and comprehension as effectively as possible. Your response must include at least one new generated question." }
         ];
-        functions.onFavoriteReceiveProcessedData(uid, question_response);
-        _send(uid, messages);
+        functions.onFavoriteReceiveProcessedData(uid, session_id, question_response);
+        _send(uid, session_id, messages);
     });
 }
 ;
@@ -105,7 +105,7 @@ function INPUT_favorite(uid, question_response) {
 ;
 ;
 ;
-function _send(uid, messages) {
+function _send(uid, session_id, messages) {
     return __awaiter(this, void 0, void 0, function* () {
         const MESSAGES_HEADER = [
             { role: "system", content: "Your role is to make questions for the user to answer in order to assess their understanding of the subject. The questions should be created with the additional goal of building the user's comprehension in the subject. After the user's first message, you are not allowed to say anything. You are only allowed to call the provided tools. You are discouraged from creating exceptionally lengthy questions." },
@@ -125,7 +125,7 @@ function _send(uid, messages) {
             let result = completion === null || completion === void 0 ? void 0 : completion.choices[0].message.tool_calls;
             console.log(result);
             if (result) {
-                _do_calls(uid, result);
+                _do_calls(uid, session_id, result);
                 // Add used function names to the used_functions array
                 result.forEach(call => {
                     if (!used_functions.includes(call.function.name)) {
@@ -147,7 +147,7 @@ function _send(uid, messages) {
         return result;
     });
 }
-function _do_calls(uid, function_calls) {
+function _do_calls(uid, session_id, function_calls) {
     if (function_calls == null)
         return;
     for (let i = 0; i < function_calls.length; i++) {
@@ -159,7 +159,7 @@ function _do_calls(uid, function_calls) {
         //console.log(function_call)
         if (function_call.name == "create_multiple_choice_question") { // Create question DONE
             let new_question = function_call.arguments;
-            functions.onQuestionCreateReceiveData(uid, _deep_copy(new_question));
+            functions.onQuestionCreateReceiveData(uid, session_id, _deep_copy(new_question));
         }
         else if (function_call.name == "establish_topic") { // Register topic DONE
             //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.name), false);
@@ -167,15 +167,15 @@ function _do_calls(uid, function_calls) {
             if (function_call.arguments.hasOwnProperty("prerequisite_topics")) { // add established topic as child topic of all of these
                 for (let i = 0; i < function_call.arguments.prerequisite_topics.length; i++) {
                     let curr_topic = function_call.arguments.prerequisite_topics[i];
-                    functions.onRegisterTopicReceiveData(uid, curr_topic.name, curr_topic.description);
-                    functions.onRegisterRelationshipReceiveData(uid, curr_topic.name, function_call.arguments.name, curr_topic.strength);
+                    functions.onRegisterTopicReceiveData(uid, session_id, curr_topic.name, curr_topic.description);
+                    functions.onRegisterRelationshipReceiveData(uid, session_id, curr_topic.name, function_call.arguments.name, curr_topic.strength);
                 }
             }
             if (function_call.arguments.hasOwnProperty("child_topics")) { // add all of these as child topics of established topic
                 for (let i = 0; i < function_call.arguments.child_topics.length; i++) {
                     let curr_topic = function_call.arguments.child_topics[i];
-                    functions.onRegisterTopicReceiveData(uid, function_call.arguments.name, function_call.arguments.description);
-                    functions.onRegisterRelationshipReceiveData(uid, function_call.arguments.name, curr_topic.name, curr_topic.strength);
+                    functions.onRegisterTopicReceiveData(uid, session_id, function_call.arguments.name, function_call.arguments.description);
+                    functions.onRegisterRelationshipReceiveData(uid, session_id, function_call.arguments.name, curr_topic.name, curr_topic.strength);
                 }
             }
             _generate_metadata().current_topic = function_call.arguments.name;
@@ -183,11 +183,11 @@ function _do_calls(uid, function_calls) {
         else if (function_call.name == "establish_relationship") { // Register node relationship DONE
             //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.prerequisite_topic ), true);
             //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.child_topic        ), true);
-            functions.onRegisterTopicReceiveData(uid, function_call.arguments.prerequisite_topic, null);
-            functions.onRegisterRelationshipReceiveData(uid, function_call.arguments.prerequisite_topic, function_call.arguments.child_topic, function_call.arguments.strength);
+            functions.onRegisterTopicReceiveData(uid, session_id, function_call.arguments.prerequisite_topic, null);
+            functions.onRegisterRelationshipReceiveData(uid, session_id, function_call.arguments.prerequisite_topic, function_call.arguments.child_topic, function_call.arguments.strength);
         }
         else if (function_call.name == "explain_question") {
-            functions.onExplanationReceiveData(uid, function_call.arguments.explanation);
+            functions.onExplanationReceiveData(uid, session_id, function_call.arguments.explanation);
         }
     }
 }
