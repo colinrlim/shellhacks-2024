@@ -26,8 +26,6 @@ export const answerQuestion = createAsyncThunk(
 
       const { data } = response;
 
-      console.log(data);
-
       if (data.updateFlags.topics) {
         thunkAPI.dispatch(setTopics(data.payload.topics));
       }
@@ -84,7 +82,7 @@ const questionsSlice = createSlice({
         const { payload, updateFlags } = thunkPayload;
 
         // If questions were updated, dispatch setQuestions
-        if (updateFlags.questions) {
+        if (updateFlags && updateFlags.questions) {
           state.questions = payload.questions;
         }
       })

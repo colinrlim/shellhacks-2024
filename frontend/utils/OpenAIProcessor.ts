@@ -163,7 +163,7 @@ export async function OpenAIProcessor(
           topicExists.description = newTopic.description;
           await topicExists.save();
         } else {
-          await Topic.create({
+          topicExists = await Topic.create({
             name: newTopic.name,
             description: newTopic.description,
             createdBy: auth0Id,
@@ -198,22 +198,29 @@ export async function OpenAIProcessor(
               });
             }
 
-            // Establish the connection
-            let relationshipExists = parentTopicExists.relationships.value.find(
-              (relationship: Relationship) =>
-                relationship.child_topic === newTopic.name
-            );
+            if (parentTopicExists && parentTopicExists.relationships) {
+              // Establish the connection
+              let relationshipExists =
+                parentTopicExists.relationships.value.find(
+                  (relationship: Relationship) =>
+                    relationship.child_topic === newTopic.name
+                );
 
-            // if the relationship does exist, update the strength
-            if (relationshipExists) {
-              relationshipExists.strength = parentTopicData.strength;
+              // if the relationship does exist, update the strength
+              if (relationshipExists) {
+                relationshipExists.strength = parentTopicData.strength;
+              } else {
+                parentTopicExists.relationships.value.push({
+                  child_topic: newTopic.name,
+                  strength: parentTopicData.strength,
+                });
+
+                await parentTopicExists.save();
+              }
             } else {
-              parentTopicExists.relationships.value.push({
-                child_topic: newTopic.name,
-                strength: parentTopicData.strength,
+              return res.status(400).json({
+                message: `Parent topic ${parentTopicData.name} does not exist.`,
               });
-
-              await parentTopicExists.save();
             }
           }
         }
@@ -260,7 +267,6 @@ export async function OpenAIProcessor(
       }
     }
     // Check to verify we received at least on create_multiple_choice_question call. If we did not, re-run the completion and return the result processed through the OpenAIProcessor
-    console.log(depth);
     if (depth === -1) {
       const topics = await Topic.find({
         createdBy: auth0Id,
@@ -269,10 +275,19 @@ export async function OpenAIProcessor(
 
       // Clean topics to remove unnecessary fields (createdBy, _id)
       const cleanedTopics = topics.map((t) => {
+        let tempValue = JSON.parse(JSON.stringify(t.relationships.value));
+        tempValue = tempValue.map((v) => {
+          delete v._id;
+          return v;
+        });
+
         return {
           name: t.name,
           description: t.description,
-          relationships: t.relationships,
+          relationships: {
+            description: t.relationships.description,
+            value: tempValue,
+          },
         };
       });
 

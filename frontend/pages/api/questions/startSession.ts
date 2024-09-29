@@ -55,10 +55,19 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
 
     // Clean topics to remove unnecessary fields (createdBy, _id)
     const cleanedTopics = topics.map((t) => {
+      let tempValue = JSON.parse(JSON.stringify(t.relationships.value));
+      tempValue = tempValue.map((v) => {
+        delete v._id;
+        return v;
+      });
+
       return {
         name: t.name,
         description: t.description,
-        relationships: t.relationships,
+        relationships: {
+          description: t.relationships.description,
+          value: tempValue,
+        },
       };
     });
 
@@ -106,6 +115,11 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
         role: SET_TOPIC_PROMPTS.output_conditions.role,
         content: SET_TOPIC_PROMPTS.output_conditions.content,
       },
+      {
+        role: "assistant",
+        content:
+          "This is the beginning of the session. As this is the first prompt, you should be thinking about the prerequisite and child nodes that this topic has. You should also ensure that at least one question is generated via the tool provided.",
+      },
     ];
 
     const openAIChatCompletionObject = {
@@ -141,9 +155,11 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     });
   } catch (error) {
     console.log(error);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error });
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error,
+      stack: error.stack,
+    });
   } finally {
     return res.status(200).json({ message: "Topic set successfully" });
   }

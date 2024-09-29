@@ -64,9 +64,6 @@ async function answerQuestionHandler(
       };
     });
 
-    console.log("\n\n\n cleanedHistoricalQuestions");
-    console.log(JSON.stringify(cleanedHistoricalQuestions));
-
     question.isCorrect = question.correctChoice === selectedChoice;
     question.selectedChoice = selectedChoice;
 
@@ -89,10 +86,19 @@ async function answerQuestionHandler(
       sessionId: sessionId,
     });
     const cleanedTopics = topics.map((t) => {
+      let tempValue = JSON.parse(JSON.stringify(t.relationships.value));
+      tempValue = tempValue.map((v) => {
+        delete v._id;
+        return v;
+      });
+
       return {
         name: t.name,
         description: t.description,
-        relationships: t.relationships,
+        relationships: {
+          description: t.relationships.description,
+          value: tempValue,
+        },
       };
     });
 

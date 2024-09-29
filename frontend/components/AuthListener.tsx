@@ -28,7 +28,13 @@ const AuthListener: React.FC = () => {
   }, [user, dispatch]);
 
   if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
+  if (error)
+    return (
+      <div>
+        Error: {error.message} <Br />
+        {error.stack}
+      </div>
+    );
 
   return null; // This component doesn't render anything
 };
