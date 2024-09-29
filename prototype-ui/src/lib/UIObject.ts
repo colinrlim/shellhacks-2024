@@ -1,4 +1,4 @@
-import { tween } from './tween';
+import { tween } from '@/lib/tween';
 
 export interface UIObjectProps {
     id: string;
@@ -6,6 +6,8 @@ export interface UIObjectProps {
     startY: number;
     endX: number;
     endY: number;
+    width: number;
+    height: number;
     startOpacity: number;
     endOpacity: number;
     duration: number;
@@ -15,8 +17,8 @@ export interface UIObjectProps {
     fillColor: string;
     outlineColor: string;
     outlineSize: number;
-    fontColor: string;
     borderRadius: number;
+    padding: number;
 }
   
 export class UIObject {
@@ -25,6 +27,8 @@ export class UIObject {
     startY: number;
     endX: number;
     endY: number;
+    width: number;
+    height: number;
     startOpacity: number;
     endOpacity: number;
     duration: number;
@@ -38,8 +42,8 @@ export class UIObject {
     fillColor: string;
     outlineColor: string;
     outlineSize: number;
-    fontColor: string;
     borderRadius: number;
+    padding: number;
 
     constructor(props: UIObjectProps) {
         this.id = props.id;
@@ -47,6 +51,8 @@ export class UIObject {
         this.startY = props.startY;
         this.endX = props.endX;
         this.endY = props.endY;
+        this.width = props.width;
+        this.height = props.height;
         this.startOpacity = props.startOpacity;
         this.endOpacity = props.endOpacity;
         this.duration = props.duration;
@@ -60,8 +66,8 @@ export class UIObject {
         this.fillColor = props.fillColor;
         this.outlineColor = props.outlineColor;
         this.outlineSize = props.outlineSize;
-        this.fontColor = props.fontColor;
         this.borderRadius = props.borderRadius;
+        this.padding = props.padding;
     }
 
     update() {
