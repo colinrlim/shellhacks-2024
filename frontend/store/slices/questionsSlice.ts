@@ -25,6 +25,9 @@ export const answerQuestion = createAsyncThunk(
       });
 
       const { data } = response;
+      if (data.updateFlags.questions) {
+        thunkAPI.dispatch(setQuestions(data.payload.questions));
+      }
 
       if (data.updateFlags.topics) {
         thunkAPI.dispatch(setTopics(data.payload.topics));

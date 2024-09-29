@@ -1,6 +1,6 @@
 'use client';
 
-import { UIObject } from './UIObject';
+import { UIObject } from '@/lib/UIObject';
 
 export class UIManager {
     objects: UIObject[];

@@ -31,7 +31,7 @@ const AuthListener: React.FC = () => {
   if (error)
     return (
       <div>
-        Error: {error.message} <Br />
+        Error: {error.message} <br />
         {error.stack}
       </div>
     );

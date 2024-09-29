@@ -1,18 +1,120 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import dbConnect from "@/utils/dbConnect";
-import { Question } from "@/models";
+import { Question, User } from "@/models";
 import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0";
 import Topic from "@/models/Topic";
 import {
-  OPENAI_TOOLS,
-  QUESTION_ANSWERED_PROMPTS,
-  SYSTEM_METADATA_PROMPTS,
-} from "@/constants";
-import OpenAI from "openai";
-import { OpenAIProcessor } from "@/utils/OpenAIProcessor";
+  INPUT_answer,
+  Metadata_T,
+  Question_T,
+  QuestionResponse_T,
+  Response_T,
+  setSendMetadataFromDatabases,
+  Topic_T,
+} from "@/utils/openai_endpoint";
 
-const client = new OpenAI({
-  apiKey: process.env["OPENAI_API_KEY"],
+setSendMetadataFromDatabases(async (uid, session_id) => {
+  const metadata: Metadata_T = {
+    current_topic: "",
+    registered_topics: [],
+    favorited_questions: [],
+    historical_questions: [],
+  };
+  try {
+    await dbConnect();
+
+    // Retrieve user session & details
+    const user = await User.findOne({ auth0Id: uid });
+
+    if (!user) {
+      console.error("User not found");
+      return metadata;
+    }
+
+    // Update metadata
+    if (!user?.currentTopic) {
+      console.error("User does not have a current topic");
+      return metadata;
+    }
+    metadata.current_topic = user.currentTopic;
+
+    // Get current topics for user
+    const topics = await Topic.find({
+      createdBy: uid,
+      sessionId: session_id,
+    });
+
+    // Loop through the topics creating Topic_T objects
+    for (const topic of topics) {
+      const newTopic: Topic_T = {
+        name: topic.name,
+        description: topic.description,
+        relationships: [],
+      };
+
+      // Loop through the relationships creating Relationship_T objects
+      for (const relationship of topic.relationships.value) {
+        newTopic.relationships.push({
+          child_topic: relationship.child_topic,
+          strength: relationship.strength,
+        });
+      }
+
+      // Push the new topic to the metadata
+      metadata.registered_topics.push(newTopic);
+    }
+
+    // Get favorited questions
+    // TODO Implement favorited questions
+
+    // Get historical questions. A question is considered historical if it has been answered
+    const questions = await Question.find({
+      createdBy: uid,
+      sessionId: session_id,
+      selectedChoice: { $ne: null },
+    });
+    // Loop through the questions creating Question_T objects
+    for (const question of questions) {
+      if (!question.selectedChoice || question.isCorrect) continue;
+      const question_data: Question_T = {
+        question: question.question,
+        choice_1: question.choices["1"],
+        choice_2: question.choices["2"],
+        choice_3: question.choices["3"],
+        choice_4: question.choices["4"],
+        correct_choice: question.correctChoice,
+      };
+
+      const selectedChoice = question.selectedChoice || "1";
+      const selectedChoiceQuery = Object.keys(question_data).find((key) =>
+        key.includes(selectedChoice.toString())
+      );
+      // @ts-expect-error This will not be a number
+      const selectedChoiceContent: string =
+        question_data[selectedChoiceQuery as keyof Question_T];
+      const isCorrect = question.isCorrect || false;
+
+      const user_data: Response_T = {
+        selected_choice: question.selectedChoice,
+        selected_choice_content: selectedChoiceContent,
+        is_correct: isCorrect,
+      };
+
+      const questionResponse: QuestionResponse_T = {
+        question_data,
+        user_response: user_data,
+      };
+
+      // Append the question to the metadata
+      metadata.historical_questions.push(questionResponse);
+    }
+
+    // Return the metadata
+  } catch (error) {
+    console.error(error);
+  } finally {
+    return metadata;
+  }
 });
 
 async function answerQuestionHandler(
@@ -23,7 +125,7 @@ async function answerQuestionHandler(
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
-  const { questionId, selectedChoice, currentTopic } = req.body;
+  const { questionId, selectedChoice } = req.body;
 
   if (!questionId || !selectedChoice) {
     return res.status(400).json({ message: "Invalid request" });
@@ -44,135 +146,43 @@ async function answerQuestionHandler(
     }
     const { sessionId } = question;
 
-    const historicalQuestions = await Question.find({
-      createdBy: auth0Id,
-      isCorrect: true,
-      sessionId: sessionId,
-    });
-    // i ne4ed to clean the historical questions to remove the _id and createdBy fields
-    let cleanedHistoricalQuestions = JSON.parse(
-      JSON.stringify(historicalQuestions)
-    );
-    cleanedHistoricalQuestions = cleanedHistoricalQuestions.map((q) => {
-      delete q.choices._id;
-      return {
-        question: q.question,
-        choices: q.choices,
-        correctChoice: q.correctChoice,
-        selectedChoice: q.selectedChoice,
-        isCorrect: q.isCorrect,
-      };
-    });
-
-    question.isCorrect = question.correctChoice === selectedChoice;
+    // Update question with user's answer
     question.selectedChoice = selectedChoice;
+    question.isCorrect = selectedChoice === question.correctChoice;
 
     await question.save();
 
-    const cleanedQestionChoices = Object.entries(question.choices).filter(
-      ([key]) => !isNaN(Number(key))
-    );
-    const cleanedQuestion = {
+    const questionInterfaceData: Question_T = {
       question: question.question,
-      choices: cleanedQestionChoices,
-      correctChoice: question.correctChoice,
-      selectedChoice: question.selectedChoice,
-      isCorrect: question.isCorrect,
+      choice_1: question.choices["1"],
+      choice_2: question.choices["2"],
+      choice_3: question.choices["3"],
+      choice_4: question.choices["4"],
+      correct_choice: question.correctChoice,
     };
 
-    // Now I need to build an openai call to update the learning modules
-    const topics = await Topic.find({
-      createdBy: auth0Id,
-      sessionId: sessionId,
-    });
-    const cleanedTopics = topics.map((t) => {
-      let tempValue = JSON.parse(JSON.stringify(t.relationships.value));
-      tempValue = tempValue.map((v) => {
-        delete v._id;
-        return v;
-      });
-
-      return {
-        name: t.name,
-        description: t.description,
-        relationships: {
-          description: t.relationships.description,
-          value: tempValue,
-        },
-      };
-    });
-
-    const metadata = {
-      current_topic: {
-        description: SYSTEM_METADATA_PROMPTS.current_topic,
-        value: currentTopic,
-      },
-      registered_topics: {
-        description: SYSTEM_METADATA_PROMPTS.registered_topics,
-        value: cleanedTopics,
-      },
-      favorited_questions: {
-        description: SYSTEM_METADATA_PROMPTS.favorited_questions,
-        value: [],
-      },
-      historical_questions: {
-        description: SYSTEM_METADATA_PROMPTS.historical_questions,
-        value: cleanedHistoricalQuestions,
-      },
-    };
-
-    const payload = [
-      {
-        role: QUESTION_ANSWERED_PROMPTS.agent_role.role,
-        content: QUESTION_ANSWERED_PROMPTS.agent_role.content,
-      },
-      {
-        role: QUESTION_ANSWERED_PROMPTS.system_description.role,
-        content: QUESTION_ANSWERED_PROMPTS.system_description.content,
-      },
-      {
-        role: "system",
-        content: `{"system_metadata": ${JSON.stringify(metadata)}}`,
-      },
-      {
-        role: "system",
-        content: `{"current_question": ${JSON.stringify(cleanedQuestion)}}`,
-      },
-      {
-        role: QUESTION_ANSWERED_PROMPTS.prompt_directions.role,
-        content: QUESTION_ANSWERED_PROMPTS.prompt_directions.content,
-      },
-    ];
-
-    const openAIChatCompletionObject = {
-      model: process.env.OPENAI_MODEL,
-      messages: payload,
-      tools: OPENAI_TOOLS,
-    };
-
-    // @typescript-eslint/ban-ts-comment
-    // @ts-expect-error - I know that the completion is a string
-    const completion = await client.chat.completions.create({
-      ...openAIChatCompletionObject,
-    });
-
-    // Now we need to process openai completion
-    const OpenAIFunctionResults = await OpenAIProcessor(
-      session.user,
+    await INPUT_answer(
+      auth0Id,
       sessionId,
-      completion,
-      currentTopic,
-      res,
-      openAIChatCompletionObject
+      questionInterfaceData,
+      selectedChoice
     );
-    console.log(OpenAIFunctionResults);
-    if (!OpenAIFunctionResults) {
-      return res.status(200).json({ message: "No tool calls found" });
-    }
+
+    const topics = await Topic.find({ createdBy: auth0Id, sessionId });
+    const questions = await Question.find({
+      createdBy: auth0Id,
+      sessionId,
+    });
 
     return res.status(200).json({
-      response: "Question answered successfully",
-      ...OpenAIFunctionResults,
+      payload: {
+        questions,
+        topics,
+      },
+      updateFlags: {
+        questions: true,
+        topics: true,
+      },
     });
   } catch (error) {
     console.log(error);

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { UIBox, UITextbox, UIButton, UIFrame } from '@/lib/UIObjectTypes';
-import { UIManager } from './UIManager';
+import { UITextLabel, UITextbox, UIButton, UIFrame } from '@/lib/UIObjectTypes';
+import { UIManager } from '@/lib/UIManager';
 
 export function renderInitialize(manager: UIManager, init_objects: (manager: UIManager) => void) {
     const animationFrameRef = useRef<number>();
@@ -32,41 +32,46 @@ export function renderInitialize(manager: UIManager, init_objects: (manager: UIM
 }
 
 export function renderManager(manager: UIManager) {
-    return manager.objects.filter(obj => obj.isVisible).map(obj => renderObject(obj as UIBox | UITextbox | UIButton | UIFrame));
+    return manager.objects.filter(obj => obj.isVisible).map(obj => renderObject(obj as UITextLabel | UITextbox | UIButton | UIFrame));
 }
 
-function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
+function renderObject(obj: UITextLabel | UITextbox | UIButton | UIFrame) {
     if (!obj.isVisible) return null;
 
     const commonStyles = {
         position: 'absolute' as 'absolute',
         left: `${obj.currentX}px`,
         top: `${obj.currentY}px`,
+        width: `${obj.width}px`,
+        height: `${obj.height}px`,
         opacity: obj.currentOpacity,
         backgroundColor: obj.fillColor,
         border: `${obj.outlineSize}px solid ${obj.outlineColor}`,
         borderRadius: `${obj.borderRadius}px`,
-        color: obj.fontColor,
+        padding: `${obj.padding}px`,
     };
 
     if (obj instanceof UIFrame) {
         return (
             <div key={`frame-${obj.id}`} style={{
                 ...commonStyles,
-                padding: '10px',
             }}>
                 {obj.children.map((child, index) => 
-                    renderObject(child as UIBox | UITextbox | UIButton | UIFrame)
+                    renderObject(child as UITextLabel | UITextbox | UIButton | UIFrame)
                 )}
             </div>
         );
-    } else if (obj instanceof UIBox) {
+    } else if (obj instanceof UITextLabel) {
         return (
-            <div key={`box-${obj.id}`} style={{
+            <div key={`textlabel-${obj.id}`} style={{
                 ...commonStyles,
-                width: `${obj.width}px`,
-                height: `${obj.height}px`,
-            }} />
+                fontSize: `${obj.fontSize}px`,
+                fontWeight: obj.fontWeight,
+                textAlign: obj.textAlign,
+                color: obj.fontColor,
+            }}>
+                {obj.text}
+            </div>
         );
     } else if (obj instanceof UITextbox) {
         return (
@@ -74,11 +79,15 @@ function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
                 key={`textbox-${obj.id}`}
                 type="text"
                 value={obj.text}
+                placeholder={obj.placeholderText}
                 onChange={(e) => obj.text = e.target.value}
                 onKeyDown={(e) => e.key === 'Enter' && obj.onEnter(obj.text)}
                 style={{
                     ...commonStyles,
-                    padding: '5px',
+                    fontSize: `${obj.fontSize}px`,
+                    fontWeight: obj.fontWeight,
+                    textAlign: obj.textAlign,
+                    color: obj.fontColor,
                 }}
             />
         );
@@ -89,7 +98,10 @@ function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
                 onClick={obj.onClick}
                 style={{
                     ...commonStyles,
-                    padding: '10px',
+                    fontSize: `${obj.fontSize}px`,
+                    fontWeight: obj.fontWeight,
+                    textAlign: obj.textAlign,
+                    color: obj.fontColor,
                 }}
             >
                 {obj.text}

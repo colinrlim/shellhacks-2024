@@ -6,6 +6,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   latestExplanation?: string;
+  currentTopic?: string;
 }
 
 const UserSchema = new mongoose.Schema<IUser>({
@@ -13,6 +14,7 @@ const UserSchema = new mongoose.Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true },
   latestExplanation: { type: String },
+  currentTopic: { type: String },
 });
 
 const User: Model<IUser> =

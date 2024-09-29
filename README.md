@@ -29,4 +29,4 @@ A brief description of our project will go here once we finalize our idea.
 
 Instructions on how to set up the project locally:
 
-Deploy
+Deploy 1.0.2
