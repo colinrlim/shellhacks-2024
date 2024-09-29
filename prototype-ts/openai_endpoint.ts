@@ -182,50 +182,49 @@ type _FunctionCallUnparsed_Bot = {
 async function _send(messages: any) { // DONE
     const MESSAGES_HEADER = [
         { role: "system", content: "Your role is to make questions for the user to answer in order to assess their understanding of the subject. The questions should be created with the additional goal of building the user's comprehension in the subject. After the user's first message, you are not allowed to say anything. You are only allowed to call the provided tools. You are discouraged from creating exceptionally lengthy questions." },
-        { role: "system", content: "This education system works by generating questions to explore topics of the user's choosing. Each distict topic should be noted by you in order to visualize a network, which consists of nodes that represent each topic. This visualization will aid the user's learning and ease of use. If the topic being explored is not listed in the metadata, please register it with a command." },
+        { role: "system", content: "This education system works by generating questions to explore topics of the user's choosing. Each distinct topic should be noted by you in order to visualize a network, which consists of nodes that represent each topic. This visualization will aid the user's learning and ease of use. If the topic being explored is not listed in the metadata, please register it with a command." },
         { role: "system", content: JSON.stringify({ system_metadata: _generate_metadata() }) }
     ];
     
     messages = MESSAGES_HEADER.concat(messages);
 
-    //console.log(messages);
+    let sufficient: boolean = false;
+    let used_functions: string[] = [];
 
-    // Query API
-    let completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: messages,
-        tools: ALL_TOOLS
-    });
     let result;
-    if (completion != undefined)
-        result = completion.choices[0].message.tool_calls;
-    
-    console.log(result);
 
-    let sufficient = false;
-    while (!sufficient) {
-        if (completion != undefined)
-            _do_calls(result!);
-        messages[2].content = JSON.stringify({ system_metadata: _generate_metadata() });
+    while (!sufficient && (result == undefined || result == null)) {
+        let completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: messages,
+            tools: ALL_TOOLS.filter(func => !used_functions.includes(func.function.name))
+        });
 
-        if (completion != undefined && result!.findIndex(obj => obj.function.name == "create_multiple_choice_question") != -1)
-            sufficient = true;
-        else {
+        let result = completion?.choices[0].message.tool_calls;
+        
+        console.log(result);
+
+        if (result) {
+            _do_calls(result);
+            
+            // Add used function names to the used_functions array
+            result.forEach(call => {
+                if (!used_functions.includes(call.function.name)) {
+                    used_functions.push(call.function.name);
+                }
+            });
+
+            if (result.findIndex(obj => obj.function.name == "create_multiple_choice_question") != -1) {
+                sufficient = true;
+            }
+        }
+
+        if (!sufficient) {
             messages.push({
                 role: "system",
                 content: "Though not visible to you, you responded to the user with commands, but did not generate any questions. Please only generate questions with your next response."
             });
-            //console.log(messages);
-
-            completion = await openai.chat.completions.create({
-                model: "gpt-4o-mini",
-                messages: messages,
-                tools: ALL_TOOLS
-            });
-            if (completion == undefined) continue;
-            result = completion.choices[0].message.tool_calls;
-
-            console.log(result);
+            messages[2].content = JSON.stringify({ system_metadata: _generate_metadata() });
         }
     }
 
