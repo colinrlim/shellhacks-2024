@@ -40,7 +40,10 @@ export const setSendMetadataFromDatabases = (fn: SendMetadataFromDatabasesType) 
 export {
     INPUT_start_session,
     INPUT_answer,
-    INPUT_favorite,
+    INPUT_favorite
+}
+
+export type {
     Relationship_T,
     Topic_T,
     Metadata_T,
