@@ -1,7 +1,6 @@
-// components/GraphModal.tsx
 import { useAppSelector } from "@/store/types";
-import ModalWrapper from "./ModalWrapper";
 import Graph from "./Graph";
+import ModalWrapper from "./ModalWrapper";
 
 interface GraphModalProps {
   isOpen: boolean;
@@ -9,13 +8,12 @@ interface GraphModalProps {
 }
 
 const GraphModal = ({ isOpen, onClose }: GraphModalProps) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const user = useAppSelector((state) => state.user.userInfo);
+  const knowledge = useAppSelector((state) => state.knowledge);
 
   return (
-    <ModalWrapper isOpen={isOpen} onClose={onClose} title="Graph">
+    <ModalWrapper isOpen={isOpen} onClose={onClose} title="Settings">
       <div className="mt-2">
-        <Graph />
+        <Graph knowledge={knowledge} />
       </div>
 
       <div className="mt-4">

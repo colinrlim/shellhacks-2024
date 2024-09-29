@@ -12,39 +12,43 @@ const kVert = 0.025;
 const damping = 0.1;
 const dt = 32; // in milliseconds
 
-// const initialNodes: Node[] = [
-//   { label: "Alpha", children: ["Beta", "Gamma"], prereqs: ["Psi", "Omega"] },
-//   { label: "Beta", children: ["Theta"], prereqs: ["Alpha", "Gamma"] },
-//   { label: "Gamma", children: ["Beta"], prereqs: ["Alpha"] },
-//   { label: "Psi", children: ["Alpha"], prereqs: [] },
-//   { label: "Omega", children: ["Alpha", "Theta"], prereqs: [] },
-//   { label: "Theta", children: [], prereqs: ["Beta", "Omega"] },
-// ];
+interface Topic {
+  description: string;
+  relationships: {
+    desccription: string;
+    value: {
+      child_topic: string;
+      strength: number;
+    }[];
+  }[];
+}
 
-// const initialEdges: Edge[] = [
-//   { from: "Alpha", to: "Beta" },
-//   { from: "Alpha", to: "Gamma" },
-//   { from: "Omega", to: "Alpha" },
-//   { from: "Psi", to: "Alpha" },
-//   { from: "Gamma", to: "Beta" },
-//   { from: "Beta", to: "Theta" },
-//   { from: "Omega", to: "Theta" },
-// ];
+interface KnowledgeState {
+  topics: Record<string, Topic>;
+  currentTopic: string | null;
+  loading: boolean;
+  error: string | null;
+  sessionActive: boolean;
+}
 
-const Graph: React.FC = () => {
+interface GraphProps {
+  knowledge: KnowledgeState;
+}
+
+const Graph = ({ knowledge }: GraphProps) => {
   // parsing topics into nodes and edges
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const dispatch = useAppDispatch();
-  const topics = useAppSelector((state) => state.knowledge.topics);
+  const { topics } = knowledge;
+  console.log(topics);
 
   // Convert topics object into an array with 'label' as the key name
   const topicsArray = Object.entries(topics).map(([key, topic]) => ({
     label: key, // Add the key as the 'label'
-    ...topic    // Spread the rest of the topic properties
+    ...topic, // Spread the rest of the topic properties
   }));
-  const nodesArray : Node[] = [];
+  const nodesArray: Node[] = [];
   for (const topic of topicsArray) {
-    const node : Node = {
+    const node: Node = {
       label: topic.label,
       children: [],
       prereqs: [],
@@ -55,20 +59,24 @@ const Graph: React.FC = () => {
       }
     }
     nodesArray.push(node);
-  } 
-  for (const node of nodesArray) {
-    for (const child of node.children) {
-      for (const otherNode of nodesArray) {
-        if (otherNode.label === child && !otherNode.prereqs.includes(node.label))
+  }
+  for (const node in nodesArray) {
+    for (const child in nodesArray[node].children) {
+      for (const x in nodesArray[node].children) {
+        const otherNode = nodesArray[node].children[x];
+        if (
+          otherNode.label === child &&
+          !otherNode.prereqs.includes(node.label)
+        )
           otherNode.prereqs.push(node.label);
       }
     }
   }
 
-  const edgesArray : Edge[] = [];
+  const edgesArray: Edge[] = [];
   for (const node of nodesArray) {
     for (const child of node.children) {
-      const newEdge : Edge = {from: node.label, to: child};
+      const newEdge: Edge = { from: node.label, to: child };
       let exists = false;
       for (const edge of edgesArray) {
         if (JSON.stringify(edge) === JSON.stringify(newEdge)) {
@@ -112,8 +120,8 @@ const Graph: React.FC = () => {
   // Initialize positions for the root node and related nodes
   const initializeGraph = () => {
     const rootNode = nodes[0];
-    rootNode.position = new Vector(0,0);
-    rootNode.velocity = new Vector(0,0);
+    rootNode.position = new Vector(0, 0);
+    rootNode.velocity = new Vector(0, 0);
     rootNode.level = 0;
 
     assignRelatedPos(rootNode);
@@ -144,10 +152,12 @@ const Graph: React.FC = () => {
 
   const assignNodePos = (node: Node, prevNode: Node) => {
     const R = r * (node.level || 1);
-    const prev : Vector = !(prevNode.position==undefined) ? prevNode.position : new Vector(0,0);
+    const prev: Vector = !(prevNode.position == undefined)
+      ? prevNode.position
+      : new Vector(0, 0);
     const rel = prevNode.children.includes(node.label) ? 1 : -1;
 
-    const pt = new Vector(0,0);
+    const pt = new Vector(0, 0);
     do {
       pt.y = prev.y + rel * r * Math.random();
       const randSign = Math.random() < 0.5 ? -1 : 1;
@@ -155,47 +165,44 @@ const Graph: React.FC = () => {
     } while (checkEdgeIntersects(prev, pt));
 
     node.position = pt;
-    node.velocity = new Vector(0,0);
+    node.velocity = new Vector(0, 0);
     node.initialPosition = pt;
   };
 
-// To find orientation of ordered triplet (p, q, r).
-// The function returns following values
-// 0 --> p, q and r are collinear
-// 1 --> Clockwise
-// 2 --> Counterclockwise
-function doOrientation(p: Vector, q: Vector, r: Vector) {
-  const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+  // To find orientation of ordered triplet (p, q, r).
+  // The function returns following values
+  // 0 --> p, q and r are collinear
+  // 1 --> Clockwise
+  // 2 --> Counterclockwise
+  function doOrientation(p: Vector, q: Vector, r: Vector) {
+    const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 
-  if (val == 0) return 0; // collinear
+    if (val == 0) return 0; // collinear
 
-  return val > 0 ? 1 : 2; // clock or counterclock wise
-}
+    return val > 0 ? 1 : 2; // clock or counterclock wise
+  }
 
-function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
-  // Find the four orientations needed for general cases (special cases are eliminated here)
-  const o1 = doOrientation(p1, q1, p2);
-  const o2 = doOrientation(p1, q1, q2);
-  const o3 = doOrientation(p2, q2, p1);
-  const o4 = doOrientation(p2, q2, q1);
+  function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
+    // Find the four orientations needed for general cases (special cases are eliminated here)
+    const o1 = doOrientation(p1, q1, p2);
+    const o2 = doOrientation(p1, q1, q2);
+    const o3 = doOrientation(p2, q2, p1);
+    const o4 = doOrientation(p2, q2, q1);
 
-  // General case
-  if (
-    (p1.x === p2.x && p1.y === p2.y) ||
-    (q1.x === q2.x && q1.y === q2.y) ||
-    (p1.x === q2.x && p1.y === q2.y) ||
-    (q1.x === p2.x && q1.y === p2.y)
-  )
-    return false; // edges from same node will never intersect because of graph structure
-  if (o1 != o2 && o3 != o4) return true;
+    // General case
+    if (
+      (p1.x === p2.x && p1.y === p2.y) ||
+      (q1.x === q2.x && q1.y === q2.y) ||
+      (p1.x === q2.x && p1.y === q2.y) ||
+      (q1.x === p2.x && q1.y === p2.y)
+    )
+      return false; // edges from same node will never intersect because of graph structure
+    if (o1 != o2 && o3 != o4) return true;
 
-  return false; // Doesn't fall in any of the above cases
-}
+    return false; // Doesn't fall in any of the above cases
+  }
 
-  const checkEdgeIntersects = (
-    p1: Vector,
-    p2: Vector
-  ) => {
+  const checkEdgeIntersects = (p1: Vector, p2: Vector) => {
     let intersects = false;
     for (const edge of edges) {
       const from = nodes.find((node) => node.label === edge.from);
@@ -222,10 +229,17 @@ function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
     const newNodes = [...nodes];
 
     for (const node of newNodes) {
-      if (node === newNodes[0] || node.level == undefined || node.position == undefined || node.velocity == undefined || node.initialPosition == undefined) continue;
+      if (
+        node === newNodes[0] ||
+        node.level == undefined ||
+        node.position == undefined ||
+        node.velocity == undefined ||
+        node.initialPosition == undefined
+      )
+        continue;
       const R = node.level * r;
       const tanVect = new Vector(-node.position.y, node.position.x);
-      let fSum = new Vector(0,0);
+      let fSum = new Vector(0, 0);
       for (const otherNode of newNodes) {
         if (node === otherNode || otherNode.position == undefined) continue;
         const dPos = node.position.subtract(otherNode.position);
@@ -237,14 +251,14 @@ function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
         ) {
           fAttr = dPos.scale(-kAttr);
         } else {
-          fAttr = new Vector(0,0);
+          fAttr = new Vector(0, 0);
         }
-        const fRep = dPos.scale(kRep/d3);
+        const fRep = dPos.scale(kRep / d3);
         fSum = fSum.add(fAttr.add(fRep));
       }
       fSum.y += kVert * Math.sign(node.position.y);
       const proj = fSum.projectOnto(tanVect);
-      
+
       node.velocity = node.velocity.add(proj.scale(dt));
       node.velocity = node.velocity.scale(damping);
       node.position = node.position.add(node.velocity.scale(dt));
@@ -292,7 +306,10 @@ function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
     const ctx = ctxRef.current;
     if (!ctx || node.position == undefined) return;
 
-    const offsetVect = new Vector(window.innerWidth / 2, window.innerHeight/2 );
+    const offsetVect = new Vector(
+      window.innerWidth / 2,
+      window.innerHeight / 2
+    );
 
     ctx.beginPath();
     const arcCenter = offsetVect.add(node.position);
@@ -318,7 +335,10 @@ function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
     )
       return;
 
-    const offsetVect = new Vector(window.innerWidth / 2, window.innerHeight/2 );
+    const offsetVect = new Vector(
+      window.innerWidth / 2,
+      window.innerHeight / 2
+    );
     ctx.fillStyle = "gray";
     ctx.strokeStyle = "gray";
     ctx.beginPath();
@@ -332,19 +352,22 @@ function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
     drawArrow(fromNode, toNode);
   };
 
-  function drawArrow(from : Node, to : Node) {
+  function drawArrow(from: Node, to: Node) {
     const ctx = ctxRef.current;
     if (!ctx || to.position == undefined || from.position == undefined) return;
 
-    const offsetVect = new Vector(window.innerWidth / 2, window.innerHeight/2 );
+    const offsetVect = new Vector(
+      window.innerWidth / 2,
+      window.innerHeight / 2
+    );
     const arrowOffset = 0.55;
     const arrowWidth = 20;
     const dVect = to.position.subtract(from.position);
 
     const baseVect = from.position.add(dVect.scale(arrowOffset));
-  
+
     const theta = Math.atan2(-dVect.x, dVect.y); // angle from positive x to base of arrow
-  
+
     let p1 = new Vector(
       baseVect.x + arrowWidth * 0.5 * Math.cos(theta),
       baseVect.y + arrowWidth * 0.5 * Math.sin(theta)
@@ -361,7 +384,7 @@ function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
     p1 = p1.add(offsetVect);
     p2 = p2.add(offsetVect);
     p3 = p3.add(offsetVect);
-  
+
     ctx.beginPath();
     ctx.fillStyle = "gray";
     ctx.strokeStyle = "gray";
@@ -376,27 +399,28 @@ function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
     const ctx = ctxRef.current;
     if (!ctx || node.position == undefined) return;
 
-    const offsetVect = new Vector(window.innerWidth / 2, window.innerHeight/2 );
+    const offsetVect = new Vector(
+      window.innerWidth / 2,
+      window.innerHeight / 2
+    );
     const textHeight = 20;
     // const textBorder = 5;
-    
-    let textOffset : Vector;
-    if (node.position.x > 0)
-      textOffset = new Vector(16,0);
-    else
-      textOffset = new Vector(-16 - ctx.measureText(node.label).width, 0);
+
+    let textOffset: Vector;
+    if (node.position.x > 0) textOffset = new Vector(16, 0);
+    else textOffset = new Vector(-16 - ctx.measureText(node.label).width, 0);
 
     ctx.font = textHeight.toString() + "px Arial";
     let textPos = node.position.add(offsetVect);
-  //   const clearW = ctx.measureText(node.label).width;
-  //   const clearH = textHeight;
+    //   const clearW = ctx.measureText(node.label).width;
+    //   const clearH = textHeight;
 
-  // ctx.clearRect(
-  //   textPos.x - textBorder,
-  //   textPos.y + textBorder,
-  //   clearW + textBorder,
-  //   -clearH - textBorder
-  // );
+    // ctx.clearRect(
+    //   textPos.x - textBorder,
+    //   textPos.y + textBorder,
+    //   clearW + textBorder,
+    //   -clearH - textBorder
+    // );
 
     ctx.fillStyle = "black";
     textPos = textPos.add(textOffset);
@@ -409,18 +433,25 @@ function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const mousePos = new Vector(event.clientX - rect.left, event.clientY - rect.top);
+    const mousePos = new Vector(
+      event.clientX - rect.left,
+      event.clientY - rect.top
+    );
 
-    const offsetVect = new Vector(window.innerWidth / 2, window.innerHeight/2 );
+    const offsetVect = new Vector(
+      window.innerWidth / 2,
+      window.innerHeight / 2
+    );
 
     // Check for clicks on nodes
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       if (node.position) {
         const distance = Math.sqrt(
           Math.pow(mousePos.x - (offsetVect.x + node.position.x), 2) +
-          Math.pow(mousePos.y - (offsetVect.y + node.position.y), 2)
+            Math.pow(mousePos.y - (offsetVect.y + node.position.y), 2)
         );
-        if (distance < 10) { // Radius of the node
+        if (distance < 10) {
+          // Radius of the node
           console.log(`Clicked on node: ${node.label}`);
           // Add any additional logic on node click
         }
@@ -428,10 +459,9 @@ function doIntersect(p1: Vector, q1: Vector, p2: Vector, q2: Vector) {
     });
   };
 
-  if (nodesArray[0] == undefined) return ( <p>Nothing here yet. Go learn something!</p>);
-  return (
-    <canvas ref={canvasRef} onClick={handleClick}></canvas>
-  );
+  if (nodesArray[0] == undefined)
+    return <p>Nothing here yet. Go learn something!</p>;
+  return <canvas ref={canvasRef} onClick={handleClick}></canvas>;
 };
 
 export default Graph;

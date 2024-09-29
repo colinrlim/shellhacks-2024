@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaCog, FaUser } from "react-icons/fa";
+import { FaUser } from "react-icons/fa";
 import Link from "next/link";
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
@@ -9,14 +9,12 @@ import {
   closeSettingsModal,
   openProfileModal,
   openSettingsModal,
-  openGraphModal,
-  closeGraphModal,
 } from "@/store/slices/uiSlice";
 import ProfileModal from "./ProfileModal";
-import SettingsModal from "./SettingsModal";
 import GraphModal from "./GraphModal";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { SlLogout } from "react-icons/sl";
+import { PiGlobeSimple } from "react-icons/pi";
 
 const ProfilePopover: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -45,18 +43,6 @@ const ProfilePopover: React.FC = () => {
       dispatch(openSettingsModal());
     }
   };
-
-  const isGraphModalOpen = useAppSelector(
-    (state) => state.ui.isGraphModalOpen
-  );
-  const toggleGraphModal = () => {
-    if (isGraphModalOpen) dispatch(closeGraphModal());
-    else {
-      setIsHovered(false);
-      dispatch(openGraphModal());
-    }
-  };
-
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -85,13 +71,13 @@ const ProfilePopover: React.FC = () => {
               Profile
             </button>
           </li>
-          <li>
+          <li className="hidden">
             <button
               className="w-full text-left block text-md px-4 py-2 text-black transition-colors"
               onClick={toggleSettingsModal}
             >
-              <FaCog className="inline-block text-md mr-5 ml-2" />
-              Settings
+              <PiGlobeSimple className="inline-block text-md mr-5 ml-2" />
+              Graph
             </button>
           </li>
           <li>
@@ -116,25 +102,11 @@ const ProfilePopover: React.FC = () => {
         <span className="text-black truncate">{name}</span>
       </div>
 
-      <div
-      className="fixed bottom-4 right-4 z-50 border-gray-300 border rounded-md group hover:rounded-t-none overflow-hidden"
-      onClick={toggleGraphModal}
-    >Knowledge Graph</div>    
-
       {/* Profile Modal */}
       <ProfileModal isOpen={isProfileModalOpen} onClose={toggleProfileModal} />
 
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={toggleSettingsModal}
-      />
-
       {/* Graph Modal */}
-      <GraphModal
-        isOpen={isGraphModalOpen}
-        onClose={toggleGraphModal}
-      />
+      <GraphModal isOpen={isSettingsModalOpen} onClose={toggleSettingsModal} />
     </div>
   );
 };

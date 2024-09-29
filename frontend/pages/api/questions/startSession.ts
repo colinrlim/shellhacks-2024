@@ -141,7 +141,10 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
     }
 
     // Update the latest explanation for the user
-    user.latestExplanation = explanation;
+    user.latestExplanation = {
+      explanation,
+      saved: false,
+    };
     await user.save();
   } catch (error) {
     console.error(error);

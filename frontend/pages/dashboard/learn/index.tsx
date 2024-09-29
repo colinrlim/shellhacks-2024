@@ -6,6 +6,7 @@ import { useAppSelector } from "@/store/types";
 import { getQuestions, startSession } from "@/store/slices/knowledgeSlice";
 import Question from "@/components/Question";
 import Loader from "@/components/Loader";
+import GraphModal from "@/components/GraphModal_old";
 
 function Learn() {
   const dispatch = useAppDispatch();
@@ -66,45 +67,47 @@ function Learn() {
   }, [sessionActive, sessionId, currentTopic, dispatch]);
 
   return (
-    <div className="flex justify-center w-full min-h-screen bg-gray-100">
-      {/* Center wrapper with borders */}
-      <div className="w-full max-w-2xl bg-white border-x border-gray-300">
-        <div className="p-4">
-          <h1 className="text-2xl font-bold mb-4 text-center">
-            {currentTopic || "Topic Title"}
-          </h1>
-          {/* Render questions */}
-          {loading && (
-            <>
-              <Loader show={loading} />
-            </>
-          )}
-          {/* Display Error if exists */}
-          {error && (
-            <div className="mb-4 text-red-500">
-              <p>Error: {error}</p>
+    <>
+      <div className="flex justify-center w-full min-h-screen bg-gray-100">
+        {/* Center wrapper with borders */}
+        <div className="w-full max-w-2xl bg-white border-x border-gray-300">
+          <div className="p-4">
+            <h1 className="text-2xl font-bold mb-4 text-center">
+              {currentTopic || "Topic Title"}
+            </h1>
+            {/* Render questions */}
+            {loading && (
+              <>
+                <Loader show={loading} />
+              </>
+            )}
+            {/* Display Error if exists */}
+            {error && (
+              <div className="mb-4 text-red-500">
+                <p>Error: {error}</p>
 
-              <button
-                className="mt-2 bg-red-500 text-white px-4 py-2 rounded"
-                onClick={() => router.push("/")}
-              >
-                Go Home
-              </button>
-            </div>
-          )}
+                <button
+                  className="mt-2 bg-red-500 text-white px-4 py-2 rounded"
+                  onClick={() => router.push("/")}
+                >
+                  Go Home
+                </button>
+              </div>
+            )}
 
-          {currentTopic &&
-            questions.map((question, index) => (
-              <Question
-                key={index}
-                question={question}
-                questionNumber={index + 1}
-                currentTopic={currentTopic}
-              />
-            ))}
+            {currentTopic &&
+              questions.map((question, index) => (
+                <Question
+                  key={index}
+                  question={question}
+                  questionNumber={index + 1}
+                  currentTopic={currentTopic}
+                />
+              ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

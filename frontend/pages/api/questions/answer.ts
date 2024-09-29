@@ -135,6 +135,7 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
 
     // Check for an existing explanation
     if (user.latestExplanation && !user.latestExplanation.saved) {
+      console.log("explanation avalalb");
       // find tghe question
       const question = await Question.findById(user.lastSubmitQuestion);
       if (!question) {
@@ -144,13 +145,15 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
 
       // Set the explanation to the question
       question.explanation = explanation;
-      question.save();
+      await question.save();
 
       // Set the user's latestExplanation to the explanation
       user.latestExplanation = {
         explanation: "",
         saved: false,
       };
+
+      await user.save();
     }
 
     // Set the user's latestExplanation to the explanation
