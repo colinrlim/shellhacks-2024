@@ -1,6 +1,9 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const OPENAI_KEY =
+  "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";
+
+const openai = new OpenAI({ apiKey: OPENAI_KEY });
 
 // Function types
 type OnAnswerReceiveProcessedDataType = (
@@ -36,7 +39,10 @@ type OnExplanationReceiveDataType = (
   session_id: string,
   explanation: string
 ) => void;
-type SendMetadataFromDatabasesType = () => Metadata_T;
+type SendMetadataFromDatabasesType = (
+  uid: string,
+  session_id: string
+) => Promise<Metadata_T>;
 
 // Create an object to hold the functions
 const functions = {
@@ -48,7 +54,10 @@ const functions = {
   onRegisterRelationshipReceiveData:
     (() => {}) as OnRegisterRelationshipReceiveDataType,
   onExplanationReceiveData: (() => {}) as OnExplanationReceiveDataType,
-  sendMetadataFromDatabases: (() => ({})) as SendMetadataFromDatabasesType,
+  sendMetadataFromDatabases: ((
+    uid: string,
+    session_id: string
+  ) => {}) as SendMetadataFromDatabasesType,
 };
 
 // Export the functions object
@@ -169,9 +178,9 @@ async function INPUT_favorite(
   question_response: QuestionResponse_T
 ) {
   // TODO: Add answers to favorites metadata
-  _generate_metadata().favorited_questions.value.push(
-    _deep_copy(question_response)
-  );
+  await _generate_metadata(uid, session_id).then((metadata) => {
+    metadata.favorited_questions.value.push(_deep_copy(question_response));
+  });
 
   // Tell openai to dynamically generate new questions
   const messages = [
@@ -283,7 +292,9 @@ async function _send(uid: string, session_id: string, messages: any) {
     },
     {
       role: "system",
-      content: JSON.stringify({ system_metadata: _generate_metadata() }),
+      content: JSON.stringify({
+        system_metadata: await _generate_metadata(uid, session_id),
+      }),
     },
   ];
 
@@ -305,7 +316,7 @@ async function _send(uid: string, session_id: string, messages: any) {
 
     let result = completion?.choices[0].message.tool_calls;
 
-    console.log(result);
+    // console.log(result);
 
     if (result) {
       _do_calls(uid, session_id, result);
@@ -333,7 +344,7 @@ async function _send(uid: string, session_id: string, messages: any) {
           "Though not visible to you, you responded to the user with commands, but did not generate any questions. Please only generate questions with your next response.",
       });
       messages[2].content = JSON.stringify({
-        system_metadata: _generate_metadata(),
+        system_metadata: await _generate_metadata(uid, session_id),
       });
     }
   }
@@ -341,11 +352,11 @@ async function _send(uid: string, session_id: string, messages: any) {
   return result;
 }
 
-function _do_calls(
+async function _do_calls(
   uid: string,
   session_id: string,
   function_calls: _FunctionCallUnparsed_Bot[]
-): void {
+): Promise<void> {
   // DONE
   if (function_calls == null) return;
   for (let i = 0; i < function_calls.length; i++) {
@@ -368,7 +379,7 @@ function _do_calls(
     } else if (function_call.name == "establish_topic") {
       // Register topic DONE
       //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.name), false);
-      _generate_metadata();
+      await _generate_metadata(uid, session_id);
 
       if (function_call.arguments.hasOwnProperty("prerequisite_topics")) {
         // add established topic as child topic of all of these
@@ -415,7 +426,9 @@ function _do_calls(
         }
       }
 
-      _generate_metadata().current_topic = function_call.arguments.name;
+      _generate_metadata(uid, session_id).then((metadata) => {
+        metadata.current_topic = function_call.arguments.name;
+      });
     } else if (function_call.name == "establish_relationship") {
       // Register node relationship DONE
       //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.prerequisite_topic ), true);
@@ -474,8 +487,14 @@ function _transform_question_response_array(
 
   return result;
 }
-function _generate_metadata(): _Metadata_Bot {
-  let metadata: Metadata_T = functions.sendMetadataFromDatabases();
+async function _generate_metadata(
+  uid: string,
+  session_id: string
+): Promise<_Metadata_Bot> {
+  let metadata: Metadata_T = await functions.sendMetadataFromDatabases(
+    uid,
+    session_id
+  );
   return {
     current_topic: {
       description:

@@ -26,6 +26,7 @@ import {
   Response_T,
 } from "@/utils/openai_endpoint";
 import { Question } from "@/models";
+import { RiContrastDropLine } from "react-icons/ri";
 
 const client = new OpenAI({
   apiKey: process.env["OPENAI_API_KEY"],
@@ -34,6 +35,7 @@ const client = new OpenAI({
 // Function Overrides
 
 setOnQuestionCreateReceiveData(async (uid, session_id, question) => {
+  console.log(uid, session_id);
   try {
     await dbConnect();
 
@@ -148,7 +150,6 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
     console.error(error);
   }
 });
-// @ts-expect-error
 // TODO Confirm this works as expected
 setSendMetadataFromDatabases(async (uid, session_id) => {
   let metadata: Metadata_T = {
