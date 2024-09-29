@@ -106,7 +106,7 @@ const ProfilePopover: React.FC = () => {
       <ProfileModal isOpen={isProfileModalOpen} onClose={toggleProfileModal} />
 
       {/* Graph Modal */}
-      <GraphModal isOpen={isSettingsModalOpen} onClose={toggleSettingsModal} />
+      
     </div>
   );
 };
