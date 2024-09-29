@@ -18,6 +18,12 @@ import {
   setOnRegisterRelationshipReceiveData,
   setOnRegisterTopicReceiveData,
   setSendMetadataFromDatabases,
+  INPUT_start_session,
+  Topic_T,
+  Metadata_T,
+  QuestionResponse_T,
+  Question_T,
+  Response_T,
 } from "@/utils/openai_endpoint";
 import { Question } from "@/models";
 
@@ -142,6 +148,111 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
     console.error(error);
   }
 });
+// @ts-expect-error
+// TODO Confirm this works as expected
+setSendMetadataFromDatabases(async (uid, session_id) => {
+  let metadata: Metadata_T = {
+    current_topic: "",
+    registered_topics: [],
+    favorited_questions: [],
+    historical_questions: [],
+  };
+  try {
+    await dbConnect();
+
+    // Retrieve user session & details
+    const user = await User.findOne({ auth0Id: uid });
+
+    if (!user) {
+      console.error("User not found");
+      return metadata;
+    }
+
+    // Update metadata
+    if (!user?.currentTopic) {
+      console.error("User does not have a current topic");
+      return metadata;
+    }
+    metadata.current_topic = user.currentTopic;
+
+    // Get current topics for user
+    const topics = await Topic.find({
+      createdBy: uid,
+      sessionId: session_id,
+    });
+
+    // Loop through the topics creating Topic_T objects
+    for (const topic of topics) {
+      const newTopic: Topic_T = {
+        name: topic.name,
+        description: topic.description,
+        relationships: [],
+      };
+
+      // Loop through the relationships creating Relationship_T objects
+      for (const relationship of topic.relationships.value) {
+        newTopic.relationships.push({
+          child_topic: relationship.child_topic,
+          strength: relationship.strength,
+        });
+      }
+
+      // Push the new topic to the metadata
+      metadata.registered_topics.push(newTopic);
+    }
+
+    // Get favorited questions
+    // TODO Implement favorited questions
+
+    // Get historical questions. A question is considered historical if it has been answered
+    const questions = await Question.find({
+      createdBy: uid,
+      sessionId: session_id,
+      selectedChoice: { $ne: null },
+    });
+    // Loop through the questions creating Question_T objects
+    for (const question of questions) {
+      if (!question.selectedChoice || question.isCorrect) continue;
+      const question_data: Question_T = {
+        question: question.question,
+        choice_1: question.choices["1"],
+        choice_2: question.choices["2"],
+        choice_3: question.choices["3"],
+        choice_4: question.choices["4"],
+        correct_choice: question.correctChoice,
+      };
+
+      const selectedChoice = question.selectedChoice || "1";
+      const selectedChoiceQuery = Object.keys(question_data).find((key) =>
+        key.includes(selectedChoice.toString())
+      );
+      // @ts-expect-error This will not be a number
+      const selectedChoiceContent: string =
+        question_data[selectedChoiceQuery as keyof Question_T];
+      const isCorrect = question.isCorrect || false;
+
+      const user_data: Response_T = {
+        selected_choice: question.selectedChoice,
+        selected_choice_content: selectedChoiceContent,
+        is_correct: isCorrect,
+      };
+
+      const questionResponse: QuestionResponse_T = {
+        question_data,
+        user_response: user_data,
+      };
+
+      // Append the question to the metadata
+      metadata.historical_questions.push(questionResponse);
+    }
+
+    // Return the metadata
+  } catch (error) {
+    console.error(error);
+  } finally {
+    return metadata;
+  }
+});
 
 async function StartSession(req: NextApiRequest, res: NextApiResponse) {
   const { topic, sessionId } = await req.body;
@@ -162,10 +273,10 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     const { sub: auth0Id } = session.user;
 
     // Find user in database
-    const user = await User.findOne({ auth0Id });
+    let user = await User.findOne({ auth0Id });
     // If the user is not found, create a new user
     if (!user) {
-      await User.create({
+      user = await User.create({
         auth0Id,
         topic,
         name: session.user.name,
@@ -173,118 +284,39 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
       });
     }
 
-    // Get current topics for user
+    // Set the current topic for the user
+    user.currentTopic = topic;
+    await user.save();
+
+    // Begin the session
+    await INPUT_start_session(auth0Id, sessionId, topic);
+
+    // Data should now be available for the user
+    const questions = await Question.find({
+      createdBy: auth0Id,
+      sessionId,
+    });
     const topics = await Topic.find({
       createdBy: auth0Id,
-      sessionId: sessionId,
-    });
-
-    // Clean topics to remove unnecessary fields (createdBy, _id)
-    const cleanedTopics = topics.map((t) => {
-      let tempValue = JSON.parse(JSON.stringify(t.relationships.value));
-      tempValue = tempValue.map((v) => {
-        delete v._id;
-        return v;
-      });
-
-      return {
-        name: t.name,
-        description: t.description,
-        relationships: {
-          description: t.relationships.description,
-          value: tempValue,
-        },
-      };
-    });
-
-    const metadata = {
-      current_topic: {
-        description: SYSTEM_METADATA_PROMPTS.current_topic,
-        value: topic,
-      },
-      registered_topics: {
-        description: SYSTEM_METADATA_PROMPTS.registered_topics,
-        value: cleanedTopics,
-      },
-      favorited_questions: {
-        description: SYSTEM_METADATA_PROMPTS.favorited_questions,
-        value: [],
-      },
-      historical_questions: {
-        description: SYSTEM_METADATA_PROMPTS.historical_questions,
-        value: [],
-      },
-    };
-    const payload = [
-      {
-        role: SET_TOPIC_PROMPTS.agent_role.role,
-        content: SET_TOPIC_PROMPTS.agent_role.content,
-      },
-      {
-        role: SET_TOPIC_PROMPTS.system_description.role,
-        content: SET_TOPIC_PROMPTS.system_description.content,
-      },
-      {
-        role: SET_TOPIC_PROMPTS.prompt_helper.role,
-        content: SET_TOPIC_PROMPTS.prompt_helper.content,
-      },
-
-      {
-        role: "system",
-        content: `{"system_metadata": ${JSON.stringify(metadata)}}`,
-      },
-      {
-        role: "user",
-        content: topic,
-      },
-      {
-        role: SET_TOPIC_PROMPTS.output_conditions.role,
-        content: SET_TOPIC_PROMPTS.output_conditions.content,
-      },
-      {
-        role: "assistant",
-        content:
-          "This is the beginning of the session. As this is the first prompt, you should be thinking about the prerequisite and child nodes that this topic has. You should also ensure that at least one question is generated via the tool provided.",
-      },
-    ];
-
-    const openAIChatCompletionObject = {
-      model: "gpt-4o",
-      messages: payload,
-      tools: OPENAI_TOOLS,
-    };
-
-    // @typescript-eslint/ban-ts-comment
-    // @ts-expect-error - I know that the completion is a string
-    const completion = await client.chat.completions.create({
-      ...openAIChatCompletionObject,
-    });
-
-    // Now we need to process openai completion
-    const OpenAIFunctionResults = await OpenAIProcessor(
-      session.user,
       sessionId,
-      completion,
-      topic,
-      res,
-      openAIChatCompletionObject,
-      -1
-    );
+    });
 
-    if (!OpenAIFunctionResults) {
-      return res.status(200).json({ message: "No tool calls found" });
-    }
-
+    // Send the topics to the user
     return res.status(200).json({
-      response: "Session started successfully",
-      ...OpenAIFunctionResults,
+      payload: {
+        questions,
+        topics,
+      },
+      updateFlags: {
+        questions: true,
+        topics: true,
+      },
     });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       message: "Internal Server Error",
       error: error,
-      stack: error.stack,
     });
   } finally {
     return res.status(200).json({ message: "Topic set successfully" });
