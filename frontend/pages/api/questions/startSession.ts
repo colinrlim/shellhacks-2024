@@ -12,9 +12,135 @@ import {
 } from "@/constants";
 import { OpenAIProcessor } from "@/utils/OpenAIProcessor";
 import Topic from "@/models/Topic";
+import {
+  setOnExplanationReceiveData,
+  setOnQuestionCreateReceiveData,
+  setOnRegisterRelationshipReceiveData,
+  setOnRegisterTopicReceiveData,
+  setSendMetadataFromDatabases,
+} from "@/utils/openai_endpoint";
+import { Question } from "@/models";
 
 const client = new OpenAI({
   apiKey: process.env["OPENAI_API_KEY"],
+});
+
+// Function Overrides
+
+setOnQuestionCreateReceiveData(async (uid, session_id, question) => {
+  try {
+    await dbConnect();
+
+    // We have received a new question from the OpenAI endpoint
+    // We need to save this question to the database
+    const {
+      question: questionText,
+      choice_1,
+      choice_2,
+      choice_3,
+      choice_4,
+      correct_choice,
+    } = question;
+
+    // Save the question to the database
+    await Question.create({
+      question: questionText,
+      choices: {
+        "1": choice_1,
+        "2": choice_2,
+        "3": choice_3,
+        "4": choice_4,
+      },
+      correctChoice: correct_choice,
+      createdBy: uid,
+      createdAt: new Date(),
+      sessionId: session_id,
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+setOnRegisterTopicReceiveData(
+  async (uid, session_id, topic_name, topic_description) => {
+    try {
+      await dbConnect();
+
+      // First identify if the topic already exists
+      const existingTopic = await Topic.findOne({
+        name: topic_name,
+        createdBy: uid,
+        sessionId: session_id,
+      });
+
+      // If the topic already exists, update the description
+      if (existingTopic) {
+        existingTopic.description = topic_description || "";
+        await existingTopic.save();
+      } else {
+        // If the topic does not exist, create a new topic
+        await Topic.create({
+          name: topic_name,
+          description: topic_description || "",
+          createdBy: uid,
+          sessionId: session_id,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+);
+
+setOnRegisterRelationshipReceiveData(
+  async (uid, session_id, topic_name, child_topic, strength) => {
+    try {
+      await dbConnect();
+
+      // Locate the prereqTopic in the database
+      const prereqTopic = await Topic.findOne({
+        name: topic_name,
+        createdBy: uid,
+        sessionId: session_id,
+      });
+
+      // If the prereqTopic is not found, return an error
+      if (!prereqTopic) {
+        console.error(`Prerequisite topic "${topic_name}" not found`);
+        return;
+      }
+
+      // Create a new relationship object
+      const newRelationship = {
+        child_topic,
+        strength,
+      };
+
+      // Add the new relationship to the prereqTopic
+      prereqTopic.relationships.value.push(newRelationship);
+      await prereqTopic.save();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+);
+setOnExplanationReceiveData(async (uid, session_id, explanation) => {
+  try {
+    await dbConnect();
+
+    // Find the current latest explanation for the user, or create it
+    const user = await User.findOne({ auth0Id: uid });
+    if (!user) {
+      console.error("User not found");
+      return;
+    }
+
+    // Update the latest explanation for the user
+    user.latestExplanation = explanation;
+    await user.save();
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 async function StartSession(req: NextApiRequest, res: NextApiResponse) {

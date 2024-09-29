@@ -5,12 +5,14 @@ export interface IUser extends Document {
   auth0Id: string;
   name: string;
   email: string;
+  latestExplanation?: string;
 }
 
 const UserSchema = new mongoose.Schema<IUser>({
   auth0Id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   email: { type: String, required: true },
+  latestExplanation: { type: String },
 });
 
 const User: Model<IUser> =

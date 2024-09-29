@@ -1,7 +1,6 @@
 import mongoose, { Document, Model } from "mongoose";
 
 export interface IQuestion extends Document {
-  topic: string;
   question: string;
   choices: Record<"1" | "2" | "3" | "4", string>;
   correctChoice: number;
@@ -10,10 +9,10 @@ export interface IQuestion extends Document {
   createdAt: Date;
   createdBy: string;
   sessionId: string;
+  explanation?: string;
 }
 
 const QuestionSchema = new mongoose.Schema<IQuestion>({
-  topic: { type: String, required: true },
   question: { type: String, required: true },
   choices: {
     type: {
@@ -30,6 +29,7 @@ const QuestionSchema = new mongoose.Schema<IQuestion>({
   createdAt: { type: Date, default: Date.now },
   createdBy: { type: String, required: true },
   sessionId: { type: String, required: true },
+  explanation: { type: String },
 });
 
 // Clear model cache if necessary
