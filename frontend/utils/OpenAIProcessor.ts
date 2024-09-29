@@ -8,7 +8,7 @@ import Topic, { ITopic } from "@/models/Topic";
 import { Relationship } from "@/types";
 import { GENERATE_QUESTION_PROMPT, SYSTEM_METADATA_PROMPTS } from "@/constants";
 
-const DEBUG_FLAG = process.env.DEBUG_FLAG;
+const { DEBUG_FLAG } = process.env;
 
 export async function OpenAIProcessor(
   sessionUser: Claims,
@@ -321,6 +321,7 @@ export async function OpenAIProcessor(
       if (depth > 6) {
         return res.status(500).json({
           message: "Failed to generate question after multiple attempts.",
+          code: 200,
         });
       } else if (depth > 3) {
         // @ts-ignore
