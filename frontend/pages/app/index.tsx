@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { UIManager } from "@/lib/UIManager";
 import { UITextLabel, UITextbox, UIFrame, UIButton } from "@/lib/UIObjectTypes";
 import { renderManager, renderInitialize } from "@/lib/renderer";
@@ -20,6 +20,46 @@ export default function Home() {
   const managerRef = useRef<UIManager>(new UIManager());
   const manager = managerRef.current;
   const [userInput, setUserInput] = useState("");
+
+  /**
+   * API ROUTES:
+   * - POST /api/questions/startSession
+   * Expects:{
+   * topic: "Math"
+   * }
+   * 
+   *  Returns: {
+   *    updateFlags: {
+   *     sessionActive: true,
+   *    sessionId: "1234",
+   *   },
+   * }  payload: {
+   questions: [],
+   topics: []
+   * }
+   *  }
+   * 
+   * GET /api/questions
+   * Expects: Parameter ?sessionId=1234
+   * Returns: {
+   *    updateFlags: {
+   *     sessionActive: true,
+   *    sessionId: "1234",
+   *   },
+   * }  payload: {
+   questions: [],
+   topics: []
+   * }
+   *  }
+   * 
+   * POST /api/questions/answer
+   * Expects: {
+   *    questionId, selectedChoice, currentTopic 
+   * }
+   * 
+   * Returns: Status 200
+   * Call GET /api/questions to fetch the latest questions
+   */
 
   renderInitialize(manager, (manager: UIManager) => {
     const textbox = new UITextbox({
