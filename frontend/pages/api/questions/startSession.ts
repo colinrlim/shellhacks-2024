@@ -26,7 +26,6 @@ import {
   Response_T,
 } from "@/utils/openai_endpoint";
 import { Question } from "@/models";
-import { RiContrastDropLine } from "react-icons/ri";
 
 const client = new OpenAI({
   apiKey: process.env["OPENAI_API_KEY"],
@@ -34,40 +33,44 @@ const client = new OpenAI({
 
 // Function Overrides
 
-setOnQuestionCreateReceiveData(async (uid, session_id, question) => {
-  console.log(uid, session_id);
-  try {
-    await dbConnect();
+setOnQuestionCreateReceiveData(
+  async (uid, session_id, question) =>
+    new Promise(async (resolve, reject) => {
+      try {
+        await dbConnect();
 
-    // We have received a new question from the OpenAI endpoint
-    // We need to save this question to the database
-    const {
-      question: questionText,
-      choice_1,
-      choice_2,
-      choice_3,
-      choice_4,
-      correct_choice,
-    } = question;
+        // We have received a new question from the OpenAI endpoint
+        // We need to save this question to the database
+        const {
+          question: questionText,
+          choice_1,
+          choice_2,
+          choice_3,
+          choice_4,
+          correct_choice,
+        } = question;
 
-    // Save the question to the database
-    await Question.create({
-      question: questionText,
-      choices: {
-        "1": choice_1,
-        "2": choice_2,
-        "3": choice_3,
-        "4": choice_4,
-      },
-      correctChoice: correct_choice,
-      createdBy: uid,
-      createdAt: new Date(),
-      sessionId: session_id,
-    });
-  } catch (error) {
-    console.error(error);
-  }
-});
+        // Save the question to the database
+        await Question.create({
+          question: questionText,
+          choices: {
+            "1": choice_1,
+            "2": choice_2,
+            "3": choice_3,
+            "4": choice_4,
+          },
+          correctChoice: correct_choice,
+          createdBy: uid,
+          createdAt: new Date(),
+          sessionId: session_id,
+        });
+        resolve();
+      } catch (error) {
+        console.error(error);
+        reject();
+      }
+    })
+);
 
 setOnRegisterTopicReceiveData(
   async (uid, session_id, topic_name, topic_description) => {
@@ -87,6 +90,7 @@ setOnRegisterTopicReceiveData(
         await existingTopic.save();
       } else {
         // If the topic does not exist, create a new topic
+        console.log("registering topic");
         await Topic.create({
           name: topic_name,
           description: topic_description || "",
@@ -106,16 +110,20 @@ setOnRegisterRelationshipReceiveData(
       await dbConnect();
 
       // Locate the prereqTopic in the database
-      const prereqTopic = await Topic.findOne({
+      let prereqTopic = await Topic.findOne({
         name: topic_name,
         createdBy: uid,
         sessionId: session_id,
       });
 
-      // If the prereqTopic is not found, return an error
+      // If the prereqTopic is not found, create it
       if (!prereqTopic) {
-        console.error(`Prerequisite topic "${topic_name}" not found`);
-        return;
+        prereqTopic = await Topic.create({
+          name: topic_name,
+          description: topic_name,
+          createdBy: uid,
+          sessionId: session_id,
+        });
       }
 
       // Create a new relationship object
@@ -279,7 +287,7 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     if (!user) {
       user = await User.create({
         auth0Id,
-        topic,
+        currentTopic: topic,
         name: session.user.name,
         email: session.user.email,
       });
@@ -292,7 +300,6 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     // Begin the session
     await INPUT_start_session(auth0Id, sessionId, topic);
 
-    // Data should now be available for the user
     const questions = await Question.find({
       createdBy: auth0Id,
       sessionId,
@@ -309,9 +316,10 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
         topics,
       },
       updateFlags: {
-        questions: true,
-        topics: true,
+        questions: false,
+        topics: false,
       },
+      message: "Session started successfully",
     });
   } catch (error) {
     console.log(error);

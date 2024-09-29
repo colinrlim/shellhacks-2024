@@ -20,6 +20,7 @@ interface KnowledgeState {
   currentTopic: string | null;
   loading: boolean;
   error: string | null;
+  sessionActive: boolean;
 }
 
 const initialState: KnowledgeState = {
@@ -27,6 +28,7 @@ const initialState: KnowledgeState = {
   currentTopic: null,
   loading: false,
   error: null,
+  sessionActive: false,
 };
 
 interface StartSessionPayloadProps {
@@ -64,6 +66,34 @@ export const startSession = createAsyncThunk(
   }
 );
 
+export const getQuestions = createAsyncThunk(
+  "knowledge/getQuestions",
+  async (payload: StartSessionPayloadProps, { dispatch, rejectWithValue }) => {
+    let { topic, sessionId } = payload;
+    try {
+      // Send PUT request to start the session
+      const response = await axios.get(`/api/questions?sessionId=${sessionId}`);
+      const data = response.data;
+
+      // If questions were updated, dispatch setQuestions
+      if (data.updateFlags.questions) {
+        dispatch(setQuestions(data.payload.questions));
+      }
+
+      // If topics were updated, dispatch setTopics
+      if (data.updateFlags.topics) {
+        dispatch(setTopics(data.payload.topics));
+      }
+
+      return data;
+    } catch (error: any) {
+      // Handle error appropriately
+      console.log(error);
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
 const knowledgeSlice = createSlice({
   name: "knowledge",
   initialState,
@@ -83,6 +113,7 @@ const knowledgeSlice = createSlice({
       })
       .addCase(startSession.fulfilled, (state, action) => {
         state.loading = false;
+        state.sessionActive = true;
         // You can handle additional state updates here if needed
       })
       .addCase(startSession.rejected, (state, action) => {

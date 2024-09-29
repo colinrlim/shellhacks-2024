@@ -115,7 +115,7 @@ async function INPUT_start_session(
   uid: string,
   session_id: string,
   query: string
-) {
+): Promise<void> {
   const messages = [
     { role: "assistant", content: "What would you like to learn?" },
     { role: "user", content: query },
@@ -170,7 +170,7 @@ async function INPUT_answer(
   ];
 
   functions.onAnswerReceiveProcessedData(uid, session_id, current_response);
-  _send(uid, session_id, messages);
+  await _send(uid, session_id, messages);
 }
 async function INPUT_favorite(
   uid: string,
@@ -277,7 +277,11 @@ type _FunctionCallUnparsed_Bot = {
   };
 };
 
-async function _send(uid: string, session_id: string, messages: any) {
+async function _send(
+  uid: string,
+  session_id: string,
+  messages: any
+): Promise<void> {
   // DONE
   const MESSAGES_HEADER = [
     {
@@ -319,7 +323,7 @@ async function _send(uid: string, session_id: string, messages: any) {
     // console.log(result);
 
     if (result) {
-      _do_calls(uid, session_id, result);
+      await _do_calls(uid, session_id, result);
 
       // Add used function names to the used_functions array
       result.forEach((call) => {
@@ -371,7 +375,7 @@ async function _do_calls(
     if (function_call.name == "create_multiple_choice_question") {
       // Create question DONE
       let new_question: Question_T = function_call.arguments;
-      functions.onQuestionCreateReceiveData(
+      await functions.onQuestionCreateReceiveData(
         uid,
         session_id,
         _deep_copy(new_question)
@@ -381,6 +385,13 @@ async function _do_calls(
       //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.name), false);
       await _generate_metadata(uid, session_id);
 
+      await functions.onRegisterTopicReceiveData(
+        uid,
+        session_id,
+        function_call.arguments.name,
+        function_call.arguments.description
+      );
+
       if (function_call.arguments.hasOwnProperty("prerequisite_topics")) {
         // add established topic as child topic of all of these
         for (
@@ -389,14 +400,13 @@ async function _do_calls(
           i++
         ) {
           let curr_topic = function_call.arguments.prerequisite_topics[i];
-
-          functions.onRegisterTopicReceiveData(
+          await functions.onRegisterTopicReceiveData(
             uid,
             session_id,
             curr_topic.name,
             curr_topic.description
           );
-          functions.onRegisterRelationshipReceiveData(
+          await functions.onRegisterRelationshipReceiveData(
             uid,
             session_id,
             curr_topic.name,
@@ -409,14 +419,13 @@ async function _do_calls(
         // add all of these as child topics of established topic
         for (let i = 0; i < function_call.arguments.child_topics.length; i++) {
           let curr_topic = function_call.arguments.child_topics[i];
-
-          functions.onRegisterTopicReceiveData(
+          await functions.onRegisterTopicReceiveData(
             uid,
             session_id,
             function_call.arguments.name,
             function_call.arguments.description
           );
-          functions.onRegisterRelationshipReceiveData(
+          await functions.onRegisterRelationshipReceiveData(
             uid,
             session_id,
             function_call.arguments.name,
@@ -427,6 +436,7 @@ async function _do_calls(
       }
 
       _generate_metadata(uid, session_id).then((metadata) => {
+        console.log(metadata);
         metadata.current_topic = function_call.arguments.name;
       });
     } else if (function_call.name == "establish_relationship") {
