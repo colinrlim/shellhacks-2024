@@ -21,7 +21,7 @@ enum EasingDirection
     OutIn = 3
 }*/
 
-export function tween(startingValue, endingValue, interpolant, easingStyle, easingDirection){
+export function tween(startingValue: number, endingValue: number, interpolant: number, easingStyle: string, easingDirection: string): number {
     if (interpolant >= 1)
         return endingValue;
     else if (interpolant <= 0)
