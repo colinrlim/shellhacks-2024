@@ -70,7 +70,7 @@ function Learn() {
       {/* Center wrapper with borders */}
       <div className="w-full max-w-2xl bg-white border-x border-gray-300">
         <div className="p-4">
-          <h1 className="text-2xl font-bold mb-4">
+          <h1 className="text-2xl font-bold mb-4 text-center">
             {currentTopic || "Topic Title"}
           </h1>
           {/* Render questions */}

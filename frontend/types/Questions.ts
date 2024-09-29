@@ -7,6 +7,7 @@ export interface QuestionProp {
   correctChoice: number;
   selectedChoice?: number;
   isCorrect?: boolean;
+  explanation: string;
 }
 
 export interface HistoricalQuestion {

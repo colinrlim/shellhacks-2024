@@ -89,6 +89,9 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
           {question.isCorrect
             ? "Correct!"
             : `Incorrect. Correct answer: ${question.correctChoice}`}
+          {question.explanation && (
+            <p className="text-gray-400 text-sm">{question.explanation}</p>
+          )}
         </p>
       )}
     </div>

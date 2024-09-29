@@ -1,9 +1,6 @@
 import OpenAI from "openai";
 
-const OPENAI_KEY =
-  "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";
-
-const openai = new OpenAI({ apiKey: OPENAI_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Function types
 type OnAnswerReceiveProcessedDataType = (

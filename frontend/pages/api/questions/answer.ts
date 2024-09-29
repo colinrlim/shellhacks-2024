@@ -9,6 +9,7 @@ import {
   Question_T,
   QuestionResponse_T,
   Response_T,
+  setOnExplanationReceiveData,
   setSendMetadataFromDatabases,
   Topic_T,
 } from "@/utils/openai_endpoint";
@@ -116,6 +117,54 @@ setSendMetadataFromDatabases(async (uid, session_id) => {
     return metadata;
   }
 });
+setOnExplanationReceiveData(async (uid, session_id, explanation) => {
+  try {
+    await dbConnect();
+
+    const user = await User.findOne({ auth0Id: uid });
+
+    if (!user) {
+      console.error("User not found");
+      return;
+    }
+
+    if (!user.currentTopic) {
+      console.error("User does not have a current topic");
+      return;
+    }
+
+    // Check for an existing explanation
+    if (user.latestExplanation && !user.latestExplanation.saved) {
+      // find tghe question
+      const question = await Question.findById(user.lastSubmitQuestion);
+      if (!question) {
+        console.error("Question not found");
+        return;
+      }
+
+      // Set the explanation to the question
+      question.explanation = explanation;
+      question.save();
+
+      // Set the user's latestExplanation to the explanation
+      user.latestExplanation = {
+        explanation: "",
+        saved: false,
+      };
+    }
+
+    // Set the user's latestExplanation to the explanation
+    if (user.latestExplanation) {
+      user.latestExplanation = {
+        explanation,
+        saved: false,
+      };
+      await user.save();
+    }
+  } catch (error) {
+    console.error(error);
+  }
+});
 
 async function answerQuestionHandler(
   req: NextApiRequest,
@@ -151,6 +200,16 @@ async function answerQuestionHandler(
     question.isCorrect = selectedChoice === question.correctChoice;
 
     await question.save();
+
+    // Update the user's last answered question
+    const user = await User.findOne({ auth0Id });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.lastSubmitQuestion = questionId;
+    console.log(user.lastSubmitQuestion);
+    await user.save();
 
     const questionInterfaceData: Question_T = {
       question: question.question,
