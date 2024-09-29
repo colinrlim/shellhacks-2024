@@ -3,7 +3,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
 import dbConnect from "@/utils/dbConnect";
-import { Question } from "@/models";
 import User from "@/models/User";
 import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0";
 import {
@@ -40,18 +39,35 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     const user = await User.findOne({ auth0Id });
     // If the user is not found, create a new user
     if (!user) {
-      await User.create({ auth0Id, topic });
+      await User.create({
+        auth0Id,
+        topic,
+        name: session.user.name,
+        email: session.user.email,
+      });
     }
 
     // Get current topics for user
-    const topics = await Topic.find({ createdBy: auth0Id });
+    const topics = await Topic.find({
+      createdBy: auth0Id,
+      sessionId: sessionId,
+    });
 
     // Clean topics to remove unnecessary fields (createdBy, _id)
     const cleanedTopics = topics.map((t) => {
+      let tempValue = JSON.parse(JSON.stringify(t.relationships.value));
+      tempValue = tempValue.map((v) => {
+        delete v._id;
+        return v;
+      });
+
       return {
         name: t.name,
         description: t.description,
-        relationships: t.relationships,
+        relationships: {
+          description: t.relationships.description,
+          value: tempValue,
+        },
       };
     });
 
@@ -89,7 +105,7 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
 
       {
         role: "system",
-        content: `{system_metadata: ${JSON.stringify(metadata)}}`,
+        content: `{"system_metadata": ${JSON.stringify(metadata)}}`,
       },
       {
         role: "user",
@@ -99,21 +115,34 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
         role: SET_TOPIC_PROMPTS.output_conditions.role,
         content: SET_TOPIC_PROMPTS.output_conditions.content,
       },
+      {
+        role: "assistant",
+        content:
+          "This is the beginning of the session. As this is the first prompt, you should be thinking about the prerequisite and child nodes that this topic has. You should also ensure that at least one question is generated via the tool provided.",
+      },
     ];
 
-    // @ts-ignore
-    const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+    const openAIChatCompletionObject = {
+      model: "gpt-4o",
       messages: payload,
       tools: OPENAI_TOOLS,
+    };
+
+    // @typescript-eslint/ban-ts-comment
+    // @ts-expect-error - I know that the completion is a string
+    const completion = await client.chat.completions.create({
+      ...openAIChatCompletionObject,
     });
 
+    // Now we need to process openai completion
     const OpenAIFunctionResults = await OpenAIProcessor(
       session.user,
       sessionId,
       completion,
       topic,
-      res
+      res,
+      openAIChatCompletionObject,
+      -1
     );
 
     if (!OpenAIFunctionResults) {
@@ -126,9 +155,11 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     });
   } catch (error) {
     console.log(error);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error });
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error,
+      stack: error.stack,
+    });
   } finally {
     return res.status(200).json({ message: "Topic set successfully" });
   }

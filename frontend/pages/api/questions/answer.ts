@@ -39,7 +39,6 @@ async function answerQuestionHandler(
     const { sub: auth0Id } = session.user;
 
     const question = await Question.findById(questionId);
-    console.log(question);
     if (!question) {
       return res.status(404).json({ message: "Question not found" });
     }
@@ -50,21 +49,56 @@ async function answerQuestionHandler(
       isCorrect: true,
       sessionId: sessionId,
     });
+    // i ne4ed to clean the historical questions to remove the _id and createdBy fields
+    let cleanedHistoricalQuestions = JSON.parse(
+      JSON.stringify(historicalQuestions)
+    );
+    cleanedHistoricalQuestions = cleanedHistoricalQuestions.map((q) => {
+      delete q.choices._id;
+      return {
+        question: q.question,
+        choices: q.choices,
+        correctChoice: q.correctChoice,
+        selectedChoice: q.selectedChoice,
+        isCorrect: q.isCorrect,
+      };
+    });
 
     question.isCorrect = question.correctChoice === selectedChoice;
     question.selectedChoice = selectedChoice;
 
     await question.save();
 
-    delete question._id;
+    const cleanedQestionChoices = Object.entries(question.choices).filter(
+      ([key]) => !isNaN(Number(key))
+    );
+    const cleanedQuestion = {
+      question: question.question,
+      choices: cleanedQestionChoices,
+      correctChoice: question.correctChoice,
+      selectedChoice: question.selectedChoice,
+      isCorrect: question.isCorrect,
+    };
 
     // Now I need to build an openai call to update the learning modules
-    const topics = await Topic.find({ createdBy: auth0Id });
+    const topics = await Topic.find({
+      createdBy: auth0Id,
+      sessionId: sessionId,
+    });
     const cleanedTopics = topics.map((t) => {
+      let tempValue = JSON.parse(JSON.stringify(t.relationships.value));
+      tempValue = tempValue.map((v) => {
+        delete v._id;
+        return v;
+      });
+
       return {
         name: t.name,
         description: t.description,
-        relationships: t.relationships,
+        relationships: {
+          description: t.relationships.description,
+          value: tempValue,
+        },
       };
     });
 
@@ -83,7 +117,7 @@ async function answerQuestionHandler(
       },
       historical_questions: {
         description: SYSTEM_METADATA_PROMPTS.historical_questions,
-        value: historicalQuestions,
+        value: cleanedHistoricalQuestions,
       },
     };
 
@@ -98,11 +132,11 @@ async function answerQuestionHandler(
       },
       {
         role: "system",
-        content: `{system_metadata: ${JSON.stringify(metadata)}}`,
+        content: `{"system_metadata": ${JSON.stringify(metadata)}}`,
       },
       {
         role: "system",
-        content: `{current_question: ${JSON.stringify(question)}}`,
+        content: `{"current_question": ${JSON.stringify(cleanedQuestion)}}`,
       },
       {
         role: QUESTION_ANSWERED_PROMPTS.prompt_directions.role,
@@ -110,11 +144,16 @@ async function answerQuestionHandler(
       },
     ];
 
-    // @ts-ignore
-    const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+    const openAIChatCompletionObject = {
+      model: process.env.OPENAI_MODEL,
       messages: payload,
       tools: OPENAI_TOOLS,
+    };
+
+    // @typescript-eslint/ban-ts-comment
+    // @ts-expect-error - I know that the completion is a string
+    const completion = await client.chat.completions.create({
+      ...openAIChatCompletionObject,
     });
 
     // Now we need to process openai completion
@@ -123,9 +162,10 @@ async function answerQuestionHandler(
       sessionId,
       completion,
       currentTopic,
-      res
+      res,
+      openAIChatCompletionObject
     );
-
+    console.log(OpenAIFunctionResults);
     if (!OpenAIFunctionResults) {
       return res.status(200).json({ message: "No tool calls found" });
     }

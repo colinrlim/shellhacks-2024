@@ -7,8 +7,11 @@ import { setQuestions } from "./questionsSlice"; // Adjust the path as necessary
 interface Topic {
   description: string;
   relationships: {
-    child_topic: string;
-    strength: number;
+    desccription: string;
+    value: {
+      child_topic: string;
+      strength: number;
+    }[];
   }[];
 }
 
@@ -55,6 +58,7 @@ export const startSession = createAsyncThunk(
       return data;
     } catch (error: any) {
       // Handle error appropriately
+      console.log(error);
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }

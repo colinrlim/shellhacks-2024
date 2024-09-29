@@ -1,6 +1,7 @@
 // @/store/slices
 import userSlice from "./userSlice";
 import knowledgeSlice from "./knowledgeSlice";
+import uiSlice from "./uiSlice";
 import questionsSlice from "./questionsSlice";
 
-export { userSlice, knowledgeSlice, questionsSlice };
+export { userSlice, knowledgeSlice, questionsSlice, uiSlice };

@@ -1,6 +1,3 @@
-// pages/learn/index.tsx
-
-import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 
@@ -32,7 +29,7 @@ function Learn() {
     if (mounted && (!user || !currentTopic || !sessionId)) {
       router.push("/");
     }
-  }, [mounted, currentTopic, user, router]);
+  }, [mounted, currentTopic, user, router, sessionId]);
 
   // Dispatch startSession when component mounts if currentTopic exists
   useEffect(() => {
@@ -50,7 +47,7 @@ function Learn() {
         })
       );
     }
-  }, [mounted, user, currentTopic, questions.length, dispatch]);
+  }, [mounted, user, currentTopic, questions.length, dispatch, sessionId]);
 
   return (
     <div className="flex justify-center w-full min-h-screen bg-gray-100">
@@ -70,13 +67,20 @@ function Learn() {
           {error && (
             <div className="mb-4 text-red-500">
               <p>Error: {error}</p>
+
+              <button
+                className="mt-2 bg-red-500 text-white px-4 py-2 rounded"
+                onClick={() => router.push("/")}
+              >
+                Go Home
+              </button>
             </div>
           )}
 
           {currentTopic &&
             questions.map((question, index) => (
               <Question
-                key={question.question}
+                key={index}
                 question={question}
                 questionNumber={index + 1}
                 currentTopic={currentTopic}
