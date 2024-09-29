@@ -59,28 +59,8 @@ export async function OpenAIProcessor(
     const { tool_calls } = completion?.choices[0]?.message || "";
     if (!tool_calls || tool_calls.length === 0) {
       // If a message is returned completion.choices[0].content != null
-
-      if (!completion?.choices[0]?.content) return {};
-      let message = completion.choices[0].content;
-      let newFallbackCompletion = await client.chatCompletion({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Please use the create_multiple_choice_question tool to generate 4 answer choices to this question.",
-          },
-          {
-            role: "assistant",
-            content: message,
-          },
-        ],
-        tools: [OPENAI_TOOLS[0]],
-      });
-
-      console.log(newFallbackCompletion);
-
-      return {};
+      console.log("N\n\n\nO TOOLS!");
+      depth = 13;
     }
 
     const updateFlags = {
@@ -89,10 +69,10 @@ export async function OpenAIProcessor(
       currentTopic: false,
       questionExplanation: false,
     };
-    if (!DEBUG_FLAG) console.log(openAIChatCompletionObject);
+    if (DEBUG_FLAG) console.log(openAIChatCompletionObject);
     for (let i = 0; i < tool_calls.length; i++) {
       let tool_call = tool_calls[i].function;
-      if (!DEBUG_FLAG) console.log(tool_call);
+      if (DEBUG_FLAG) console.log(tool_call);
       // Create multiple choice question
       if (tool_call.name === "create_multiple_choice_question") {
         let new_question = JSON.parse(tool_call.arguments);
@@ -349,30 +329,39 @@ export async function OpenAIProcessor(
     }
     if (!updateFlags.questions) {
       if (depth > 12) {
-        return res.status(500).json({
-          message: "Failed to generate question after multiple attempts.",
-          code: 200,
-        });
-      } else if (depth > 4) {
+        // If we get to a depth of 12, we will use a different method in order to generate a question
+
+        await Question.create({
+          question: `I am having trouble generating a learning path. Could you confirm you would like to learn about ${topic}? If not, I can try to analyze your question again.`,
+          choices: {
+            1: "YES",
+            2: "NO",
+          },
+          correctChoice: 1,
+          createdBy: auth0Id,
+          sessionId,
+          topic,
+        }).catch((e) => console.log(e));
+
+        // Update flags
+        updateFlags.questions = true;
+      } else {
         // @ts-ignore
-        openAIChatCompletionObject.tools = [OPENAI_TOOLS[0]];
+        openAIChatCompletionObject.messages.push({
+          role: "system",
+          content: GENERATE_QUESTION_PROMPT.did_not_generate_question,
+        });
+
+        return OpenAIProcessor(
+          sessionUser,
+          sessionId,
+          completion,
+          topic,
+          res,
+          openAIChatCompletionObject,
+          depth + 1
+        );
       }
-
-      // @ts-ignore
-      openAIChatCompletionObject.messages.push({
-        role: "system",
-        content: GENERATE_QUESTION_PROMPT.did_not_generate_question,
-      });
-
-      return OpenAIProcessor(
-        sessionUser,
-        sessionId,
-        completion,
-        topic,
-        res,
-        openAIChatCompletionObject,
-        depth + 1
-      );
     }
 
     // Craft a response that has the updates made so the client can update the redux store

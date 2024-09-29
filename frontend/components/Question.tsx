@@ -4,6 +4,8 @@ import React from "react";
 import { Question as QuestionType } from "@/types";
 import { answerQuestion } from "@/store/slices/questionsSlice";
 import { useAppDispatch } from "@/store";
+import { useAppSelector } from "@/store/types";
+import Loader from "./Loader"; // Import the Spinner component
 
 interface QuestionProps {
   question: QuestionType;
@@ -30,12 +32,20 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
     );
   };
 
+  const loading = useAppSelector(
+    (state) => state.questions.loading[question._id]
+  );
+
   return (
-    <div className="mb-6">
+    <div className="mb-6 relative">
+      {" "}
+      {/* Make the container relative for absolute positioning */}
       <p className="mb-2">
         Question #{questionNumber}: {question.question}
       </p>
-      <div className="space-y-2">
+      <div className="space-y-2 relative">
+        {" "}
+        {/* Position relative to contain the absolute spinner */}
         {choices.map(([key, value]) => {
           const choiceKey = parseInt(key) as 1 | 2 | 3 | 4;
           let buttonClass =
@@ -50,7 +60,7 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
               buttonClass += " bg-gray-100";
             }
           } else {
-            buttonClass += " bg-gray-100 hover:bg-gray-200";
+            buttonClass += ` bg-gray-100 ${loading ? "" : "hover:bg-gray-200"}`;
           }
 
           return (
@@ -58,12 +68,17 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
               key={key}
               className={buttonClass}
               onClick={() => handleAnswerQuestion(choiceKey)}
-              disabled={!!question.selectedChoice}
+              disabled={!!question.selectedChoice || loading}
             >
               {value}
             </button>
           );
         })}
+        {loading && (
+          <div className="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center rounded">
+            <Loader show={loading} />
+          </div>
+        )}
       </div>
       {question.selectedChoice && (
         <p

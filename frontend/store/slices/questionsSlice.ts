@@ -36,11 +36,15 @@ export const answerQuestion = createAsyncThunk(
     }
   }
 );
+
+interface LoadingState {
+  [key: string]: boolean;
+}
 interface QuestionsState {
   questions: Question[];
   favoritedQuestions: Question[];
   historicalQuestions: HistoricalQuestion[];
-  loading: boolean;
+  loading: LoadingState;
   error: string | null;
 }
 
@@ -48,7 +52,7 @@ const initialState: QuestionsState = {
   questions: [],
   favoritedQuestions: [],
   historicalQuestions: [],
-  loading: false,
+  loading: {},
   error: null,
 };
 
@@ -71,12 +75,12 @@ const questionsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(answerQuestion.pending, (state) => {
-        state.loading = true;
+      .addCase(answerQuestion.pending, (state, action) => {
+        const { questionId } = action.meta.arg;
+        state.loading[questionId] = true;
         state.error = null;
       })
       .addCase(answerQuestion.fulfilled, (state, action) => {
-        state.loading = false;
         // We need to review which data changed
         const thunkPayload = action.payload;
         const { payload, updateFlags } = thunkPayload;
@@ -85,9 +89,14 @@ const questionsSlice = createSlice({
         if (updateFlags && updateFlags.questions) {
           state.questions = payload.questions;
         }
+
+        const { questionId } = action.meta.arg;
+        state.loading[questionId] = false;
+        state.error = null;
       })
       .addCase(answerQuestion.rejected, (state, action) => {
-        state.loading = false;
+        const { questionId } = action.meta.arg;
+        state.loading[questionId] = false;
         state.error = action.payload as string;
       });
   },
