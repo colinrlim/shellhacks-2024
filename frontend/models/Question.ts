@@ -19,8 +19,8 @@ const QuestionSchema = new mongoose.Schema<IQuestion>({
     type: {
       "1": { type: String, required: true },
       "2": { type: String, required: true },
-      "3": { type: String, required: true },
-      "4": { type: String, required: true },
+      "3": { type: String, required: false },
+      "4": { type: String, required: false },
     },
     required: true,
   },

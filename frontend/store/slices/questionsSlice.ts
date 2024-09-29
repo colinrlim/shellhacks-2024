@@ -24,7 +24,7 @@ export const answerQuestion = createAsyncThunk(
         currentTopic,
       });
 
-      const data = response.data;
+      const { data } = response;
 
       console.log(data);
 

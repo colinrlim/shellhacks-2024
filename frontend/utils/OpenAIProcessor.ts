@@ -127,8 +127,7 @@ export async function OpenAIProcessor(
         }
 
         // Check if relationship already exists
-        console.log(parentTopicExists.relationships);
-        let relationshipExists = parentTopicExists.relationships.find(
+        const relationshipExists = parentTopicExists.relationships.value.find(
           (relationship: Relationship) =>
             relationship.child_topic === childTopic
         );
@@ -137,7 +136,7 @@ export async function OpenAIProcessor(
         if (relationshipExists) {
           relationshipExists.strength = strength;
         } else {
-          parentTopicExists.relationships.push({
+          parentTopicExists.relationships.value.push({
             child_topic: childTopic,
             strength,
           });
@@ -200,7 +199,7 @@ export async function OpenAIProcessor(
             }
 
             // Establish the connection
-            let relationshipExists = parentTopicExists.relationships.find(
+            let relationshipExists = parentTopicExists.relationships.value.find(
               (relationship: Relationship) =>
                 relationship.child_topic === newTopic.name
             );
@@ -209,10 +208,12 @@ export async function OpenAIProcessor(
             if (relationshipExists) {
               relationshipExists.strength = parentTopicData.strength;
             } else {
-              parentTopicExists.relationships.push({
+              parentTopicExists.relationships.value.push({
                 child_topic: newTopic.name,
                 strength: parentTopicData.strength,
               });
+
+              await parentTopicExists.save();
             }
           }
         }
@@ -240,10 +241,12 @@ export async function OpenAIProcessor(
             }
 
             // Establish the connection. Since it is one way, we only need to update the parent topic
-            topicExists.relationships.push({
+            topicExists.relationships.value.push({
               child_topic: childTopicData.name,
               strength: childTopicData.strength,
             });
+
+            await topicExists.save();
           }
 
           // Update flags
@@ -309,7 +312,7 @@ export async function OpenAIProcessor(
         openAIChatCompletionObject.messages.push({
           role: "system",
           content:
-            "Do not hallucinate. Reread all instructions and think before processing. Your next output MUST be a question to the user using provided data. I will die if you do not give me question",
+            "Do not hallucinate. Reread all instructions and think before processing. Your next output MUST be a question to the user using provided data. The user is looking for a multiple choice question [weight-500]",
         });
       }
 
@@ -380,6 +383,6 @@ export async function OpenAIProcessor(
 
     return updates;
   } catch (error: any) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message, stack: error.stack });
   }
 }
