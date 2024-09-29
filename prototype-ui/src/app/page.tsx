@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { UIManager } from '@/lib/UIManager';
 import { UIBox, UITextbox, UIButton, UIFrame } from '@/lib/UIObjectTypes';
 import { renderManager, renderInitialize } from '@/lib/renderer';
