@@ -49,7 +49,7 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     }
 
     // Get current topics for user
-    const topics = await Topic.find({ createdBy: auth0Id });
+    const topics = await Topic.find({ createdBy: auth0Id, session: sessionId });
 
     // Clean topics to remove unnecessary fields (createdBy, _id)
     const cleanedTopics = topics.map((t) => {
