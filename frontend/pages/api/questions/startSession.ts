@@ -316,8 +316,6 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
       message: "Internal Server Error",
       error: error,
     });
-  } finally {
-    return res.status(200).json({ message: "Topic set successfully" });
   }
 }
 
