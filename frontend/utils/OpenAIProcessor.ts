@@ -4,11 +4,8 @@ import { Question } from "@/models";
 import User from "@/models/User";
 import { Claims } from "@auth0/nextjs-auth0";
 import { IQuestion } from "@/models/Question";
-import { ChatCompletion } from "openai/resources/index.mjs";
-import { QuestionProp } from "@/types/Questions";
 import Topic, { ITopic } from "@/models/Topic";
 import { Relationship } from "@/types";
-import { ChatCompletionMessageParam } from "openai/src/resources/index.js";
 import { GENERATE_QUESTION_PROMPT } from "@/constants";
 
 const DEBUG_FLAG = process.env.DEBUG_FLAG;
@@ -19,7 +16,8 @@ export async function OpenAIProcessor(
   completion: object,
   topic: string,
   res: NextApiResponse,
-  openAIChatCompletionObject: object
+  openAIChatCompletionObject: object,
+  depth: number = 0
 ) {
   try {
     // Connect to Database
@@ -259,12 +257,17 @@ export async function OpenAIProcessor(
     }
     // Check to verify we received at least on create_multiple_choice_question call. If we did not, re-run the completion and return the result processed through the OpenAIProcessor
     if (!updateFlags.questions) {
-      console.log(12);
       // @ts-ignore
       openAIChatCompletionObject.messages.push({
         role: "system",
         content: GENERATE_QUESTION_PROMPT.did_not_generate_question,
       });
+
+      if (depth > 6) {
+        return res.status(500).json({
+          message: "Failed to generate question after multiple attempts.",
+        });
+      }
 
       return OpenAIProcessor(
         sessionUser,
@@ -272,7 +275,8 @@ export async function OpenAIProcessor(
         completion,
         topic,
         res,
-        openAIChatCompletionObject
+        openAIChatCompletionObject,
+        depth + 1
       );
     }
 
