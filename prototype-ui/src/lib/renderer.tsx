@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { UIBox, UITextbox, UIButton, UIFrame } from '@/lib/UIObjectTypes';
+import { UITextLabel, UITextbox, UIButton, UIFrame } from '@/lib/UIObjectTypes';
 import { UIManager } from './UIManager';
 
 export function renderInitialize(manager: UIManager, init_objects: (manager: UIManager) => void) {
@@ -32,10 +32,10 @@ export function renderInitialize(manager: UIManager, init_objects: (manager: UIM
 }
 
 export function renderManager(manager: UIManager) {
-    return manager.objects.filter(obj => obj.isVisible).map(obj => renderObject(obj as UIBox | UITextbox | UIButton | UIFrame));
+    return manager.objects.filter(obj => obj.isVisible).map(obj => renderObject(obj as UITextLabel | UITextbox | UIButton | UIFrame));
 }
 
-function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
+function renderObject(obj: UITextLabel | UITextbox | UIButton | UIFrame) {
     if (!obj.isVisible) return null;
 
     const commonStyles = {
@@ -56,17 +56,21 @@ function renderObject(obj: UIBox | UITextbox | UIButton | UIFrame) {
                 padding: '10px',
             }}>
                 {obj.children.map((child, index) => 
-                    renderObject(child as UIBox | UITextbox | UIButton | UIFrame)
+                    renderObject(child as UITextLabel | UITextbox | UIButton | UIFrame)
                 )}
             </div>
         );
-    } else if (obj instanceof UIBox) {
+    } else if (obj instanceof UITextLabel) {
         return (
-            <div key={`box-${obj.id}`} style={{
+            <div key={`textlabel-${obj.id}`} style={{
                 ...commonStyles,
-                width: `${obj.width}px`,
-                height: `${obj.height}px`,
-            }} />
+                fontSize: `${obj.fontSize}px`,
+                fontWeight: obj.fontWeight,
+                textAlign: obj.textAlign,
+                padding: '5px',
+            }}>
+                {obj.text}
+            </div>
         );
     } else if (obj instanceof UITextbox) {
         return (

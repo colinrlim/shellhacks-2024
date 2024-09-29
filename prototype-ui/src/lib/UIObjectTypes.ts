@@ -1,16 +1,24 @@
 import { UIObject, UIObjectProps } from './UIObject';
 
-export class UIBox extends UIObject {
-    width: number;
-    height: number;
+export class UITextLabel extends UIObject {
+    text: string;
+    fontSize: number;
+    fontWeight: string;
+    textAlign: 'left' | 'center' | 'right';
 
-    constructor(props: UIObjectProps & { width: number; height: number }) {
+    constructor(props: UIObjectProps & { 
+        text: string;
+        fontSize?: number;
+        fontWeight?: string;
+        textAlign?: 'left' | 'center' | 'right';
+    }) {
         super(props);
-        this.width = props.width;
-        this.height = props.height;
+        this.text = props.text;
+        this.fontSize = props.fontSize || 16;
+        this.fontWeight = props.fontWeight || 'normal';
+        this.textAlign = props.textAlign || 'left';
     }
 }
-
 export class UITextbox extends UIObject {
     text: string;
     onEnter: (value: string) => void;

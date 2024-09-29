@@ -2,7 +2,7 @@
 
 import React, { useRef } from 'react';
 import { UIManager } from '@/lib/UIManager';
-import { UIBox, UITextbox, UIButton, UIFrame } from '@/lib/UIObjectTypes';
+import { UITextLabel, UITextbox, UIButton, UIFrame } from '@/lib/UIObjectTypes';
 import { renderManager, renderInitialize } from '@/lib/renderer';
 
 export default function Home() {
@@ -12,13 +12,13 @@ export default function Home() {
     renderInitialize(manager, (manager: UIManager) => {
         const frame = new UIFrame({
             id: 'main-frame',
-            startX: 0,
-            startY: 0,
-            endX: 200,
-            endY: 100,
+            startX: 50,
+            startY: 50,
+            endX: 250,
+            endY: 200,
             startOpacity: 0,
             endOpacity: 1,
-            duration: 10,
+            duration: 2,
             easingStyle: 'Elastic',
             easingDirection: 'Out',
             isVisible: true,
@@ -29,6 +29,7 @@ export default function Home() {
             borderRadius: 10,
             children: []
         });
+
         const button = new UIButton({
             id: 'toggle-button',
             startX: window.innerWidth / 2 - 75,
@@ -50,32 +51,36 @@ export default function Home() {
             onClick: () => { frame.toggleVisibility(); frame.reset(); }
         });
 
-        const box = new UIBox({
-            id: 'box',
-            startX: 0,
-            startY: 0,
-            endX: 100,
+        const textLabel = new UITextLabel({
+            id: 'text-label',
+            startX: 50,
+            startY: 50,
+            endX: 50,
             endY: 50,
-            startOpacity: 0,
+            startOpacity: 1,
             endOpacity: 1,
             duration: 2,
             easingStyle: 'Sine',
             easingDirection: 'InOut',
             isVisible: true,
-            fillColor: 'blue',
+            fillColor: 'yellow',
             outlineColor: 'black',
-            outlineSize: 1,
-            fontColor: 'white',
+            outlineSize: 2,
+            fontColor: 'black',
             borderRadius: 5,
-            width: 50,
-            height: 50,
+            text: 'Hello, World!',
+            fontSize: 24,
+            fontWeight: 'bold',
+            textAlign: 'center'
         });
+
+
         const textbox = new UITextbox({
             id: 'textbox',
-            startX: 0,
+            startX: 10,
             startY: 60,
-            endX: 0,
-            endY: 110,
+            endX: 10,
+            endY: 60,
             startOpacity: 0,
             endOpacity: 1,
             duration: 1.5,
@@ -91,7 +96,7 @@ export default function Home() {
             onEnter: (value) => console.log('Entered:', value)
         });
 
-        frame.addChild(box);
+        frame.addChild(textLabel);
         frame.addChild(textbox);
 
         manager.addObject(frame);
