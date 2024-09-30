@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const { OPENAI_MODEL } = process.env;
 
 // Function types
 type OnAnswerReceiveProcessedDataType = (
@@ -308,7 +309,7 @@ async function _send(
 
   while (!sufficient && (result == undefined || result == null)) {
     let completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: MODEL || "gpt-4o-mini",
       messages: messages,
       tools: ALL_TOOLS.filter(
         (func) => !used_functions.includes(func.function.name)
@@ -455,6 +456,7 @@ async function _do_calls(
         function_call.arguments.strength
       );
     } else if (function_call.name == "explain_question") {
+      console.log("explanation called");
       functions.onExplanationReceiveData(
         uid,
         session_id,

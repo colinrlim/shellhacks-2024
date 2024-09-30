@@ -75,7 +75,7 @@ setOnRegisterTopicReceiveData(
 
       // If the topic already exists, update the description
       if (existingTopic) {
-        existingTopic.description = topic_description || "";
+        existingTopic.description = topic_description || existingTopic.name;
         await existingTopic.save();
       } else {
         // If the topic does not exist, create a new topic
@@ -133,19 +133,51 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
   try {
     await dbConnect();
 
-    // Find the current latest explanation for the user, or create it
     const user = await User.findOne({ auth0Id: uid });
+
     if (!user) {
       console.error("User not found");
       return;
     }
 
-    // Update the latest explanation for the user
-    user.latestExplanation = {
-      explanation,
-      saved: false,
-    };
-    await user.save();
+    if (!user.currentTopic) {
+      console.error("User does not have a current topic");
+      return;
+    }
+
+    // Check for an existing explanation
+    if (user.latestExplanation && !user.latestExplanation.saved) {
+      console.log("explanation avalalb");
+      // find tghe question
+      const question = await Question.findById(user.lastSubmitQuestion);
+      if (!question) {
+        console.error("Question not found");
+        return;
+      }
+
+      // Set the explanation to the question
+      question.explanation = explanation;
+      console.log("Explanation", explanation);
+      console.log("Question", question);
+      await question.save();
+
+      // Set the user's latestExplanation to the explanation
+      user.latestExplanation = {
+        explanation: "",
+        saved: false,
+      };
+
+      await user.save();
+    }
+
+    // Set the user's latestExplanation to the explanation
+    if (user.latestExplanation) {
+      user.latestExplanation = {
+        explanation,
+        saved: false,
+      };
+      await user.save();
+    }
   } catch (error) {
     console.error(error);
   }
