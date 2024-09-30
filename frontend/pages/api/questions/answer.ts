@@ -145,6 +145,8 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
 
       // Set the explanation to the question
       question.explanation = explanation;
+      console.log("Explanation", explanation);
+      console.log("Question", question);
       await question.save();
 
       // Set the user's latestExplanation to the explanation
@@ -211,7 +213,6 @@ async function answerQuestionHandler(
     }
 
     user.lastSubmitQuestion = questionId;
-    console.log(user.lastSubmitQuestion);
     await user.save();
 
     const questionInterfaceData: Question_T = {
