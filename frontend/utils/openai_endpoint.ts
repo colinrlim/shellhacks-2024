@@ -309,7 +309,7 @@ async function _send(
 
   while (!sufficient && (result == undefined || result == null)) {
     let completion = await openai.chat.completions.create({
-      model: MODEL || "gpt-4o-mini",
+      model: OPENAI_MODEL || "gpt-4o-mini",
       messages: messages,
       tools: ALL_TOOLS.filter(
         (func) => !used_functions.includes(func.function.name)
