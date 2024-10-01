@@ -76,9 +76,9 @@ function Learn() {
             </h1>
             {/* Render questions */}
             {loading && (
-              <>
+              <div className="absolute inset-0 flex items-center justify-center rounded">
                 <Loader show={loading} />
-              </>
+              </div>
             )}
             {/* Display Error if exists */}
             {error && (

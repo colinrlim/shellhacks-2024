@@ -1,25 +1,16 @@
-import { Transition } from "@headlessui/react";
+// @/components/Loader
 
+// Imports
+import styles from "./css_modules/Loader.module.css";
+
+// Loader component props
 interface LoaderProps {
   show: boolean;
 }
 
-function Loader({ show }: LoaderProps) {
-  return (
-    <Transition
-      show={show}
-      enter="transition-opacity duration-300 ease-out"
-      enterFrom="opacity-0"
-      enterTo="opacity-100"
-      leave="transition-opacity duration-200 ease-in"
-      leaveFrom="opacity-100"
-      leaveTo="opacity-0"
-    >
-      <div className="flex justify-center items-center py-10">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent border-solid rounded-full animate-spin"></div>
-      </div>
-    </Transition>
-  );
-}
+// * Loader
+const Loader = ({ show }: LoaderProps) => {
+  return <span className={`${styles.loader} ${show ? "" : "hidden"}`}></span>;
+};
 
 export default Loader;
