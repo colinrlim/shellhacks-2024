@@ -1,12 +1,16 @@
+// @/hoc/withProtected
+
+// Imports
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { useAppDispatch } from "../store";
-
-import React from "react";
 import { clearUser, setUser } from "@/store/slices/userSlice";
 
-// Define a generic type for the higher-order component
+// * With Protected HOC
+/**
+ * This component is used to protect routes that require authentication.
+ */
 const withProtected = <P extends object>(
   WrappedComponent: React.ComponentType<P>
 ) => {
@@ -15,6 +19,7 @@ const withProtected = <P extends object>(
     const router = useRouter();
     const dispatch = useAppDispatch();
 
+    // Sets user state information if user is authenticated
     useEffect(() => {
       if (!isLoading && !user) {
         router.push("/api/auth/login");
@@ -37,7 +42,6 @@ const withProtected = <P extends object>(
       return <div>Loading...</div>;
     }
 
-    // Spread the props correctly with the right type
     return <WrappedComponent {...props} />;
   };
 

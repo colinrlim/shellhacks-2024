@@ -9,6 +9,9 @@ interface LoaderProps {
 }
 
 // * Loader
+/**
+ * Used to show a loading spinner
+ */
 const Loader = ({ show }: LoaderProps) => {
   return <span className={`${styles.loader} ${show ? "" : "hidden"}`}></span>;
 };

@@ -1,27 +1,29 @@
+// @/components/ProfilePopover
+
+// Imports
 import { useState } from "react";
 import { FaUser } from "react-icons/fa";
 import Link from "next/link";
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
 import { clearUser } from "@/store/slices/userSlice";
-import {
-  closeProfileModal,
-  closeSettingsModal,
-  openProfileModal,
-  openSettingsModal,
-} from "@/store/slices/uiSlice";
+import { closeProfileModal, openProfileModal } from "@/store/slices/uiSlice";
 import ProfileModal from "./ProfileModal";
-// import GraphModal from "./GraphModal";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { SlLogout } from "react-icons/sl";
-import { PiGlobeSimple } from "react-icons/pi";
 
-const ProfilePopover: React.FC = () => {
+function ProfilePopover() {
   const dispatch = useAppDispatch();
+
+  // User info fetched from the store
   const user = useAppSelector((state) => state.user.userInfo);
   if (!user) dispatch(clearUser());
   const { name } = user || {};
 
+  // State for hover effect
+  const [isHovered, setIsHovered] = useState(false);
+
+  // State for the profile modal open/close
   const isProfileModalOpen = useAppSelector(
     (state) => state.ui.isProfileModalOpen
   );
@@ -32,18 +34,6 @@ const ProfilePopover: React.FC = () => {
       dispatch(openProfileModal());
     }
   };
-
-  const isSettingsModalOpen = useAppSelector(
-    (state) => state.ui.isSettingsModalOpen
-  );
-  const toggleSettingsModal = () => {
-    if (isSettingsModalOpen) dispatch(closeSettingsModal());
-    else {
-      setIsHovered(false);
-      dispatch(openSettingsModal());
-    }
-  };
-  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <div
@@ -71,15 +61,6 @@ const ProfilePopover: React.FC = () => {
               Profile
             </button>
           </li>
-          <li className="hidden">
-            <button
-              className="w-full text-left block text-md px-4 py-2 text-black transition-colors"
-              onClick={toggleSettingsModal}
-            >
-              <PiGlobeSimple className="inline-block text-md mr-5 ml-2" />
-              Graph
-            </button>
-          </li>
           <li>
             <Link
               href="/api/auth/logout"
@@ -104,11 +85,8 @@ const ProfilePopover: React.FC = () => {
 
       {/* Profile Modal */}
       <ProfileModal isOpen={isProfileModalOpen} onClose={toggleProfileModal} />
-
-      {/* Graph Modal */}
-      
     </div>
   );
-};
+}
 
 export default ProfilePopover;

@@ -1,5 +1,6 @@
-// components/Modal.tsx
+// components/Modal
 
+// Imports
 import { Fragment, ReactNode } from "react";
 import {
   Dialog,
@@ -8,6 +9,7 @@ import {
   TransitionChild,
 } from "@headlessui/react";
 
+// ModalProps interface
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,6 +17,10 @@ interface ModalProps {
   children: ReactNode;
 }
 
+// * Modal Wrapper
+/**
+ * This is a wrapper for the modal popup component. It handles the background and the container for the modal.
+ */
 const ModalWrapper = ({ isOpen, onClose, title, children }: ModalProps) => {
   return (
     <Transition appear show={isOpen} as={Fragment}>

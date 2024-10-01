@@ -1,12 +1,20 @@
-// components/ProfileModal.tsx
-import { useAppSelector } from "@/store/types";
-import ModalWrapper from "./ModalWrapper";
+// components/ProfileModal
 
+// Imports
+import { useAppSelector } from "@/store/types";
+import { ModalWrapper } from "@/components";
+
+// ProfileModal component props
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+// * Profile Modal
+/**
+ * This is a modal that shows the user's profile information.
+ * TODO - Make the profile information editable
+ */
 const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
   const user = useAppSelector((state) => state.user.userInfo);
 

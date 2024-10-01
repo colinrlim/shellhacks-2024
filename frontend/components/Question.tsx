@@ -1,24 +1,34 @@
-// components/Question.tsx
+// @/components/Question
 
+// Imports
 import React from "react";
 import { Question as QuestionType } from "@/types";
 import { answerQuestion } from "@/store/slices/questionsSlice";
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
-import Loader from "./Loader"; // Import the Spinner component
+import { Loader } from "@/components";
 
+// Question component props
 interface QuestionProps {
   question: QuestionType;
   questionNumber: number;
   currentTopic: string;
 }
 
+// * Question
+/**
+ * Displays a question with choices and handles answering
+ * TODO - Make answering client side, then send to server for explanation
+ */
 function Question({ question, questionNumber, currentTopic }: QuestionProps) {
   const dispatch = useAppDispatch();
+
+  // ? This filters out the _id key from the choices object. We may want to review this later.
   const choices = Object.entries(question.choices).filter(
     ([key]) => !isNaN(Number(key))
   );
 
+  // Handle answering the question
   const handleAnswerQuestion = (selectedChoice: 1 | 2 | 3 | 4) => {
     if (question.selectedChoice) return;
 
@@ -32,6 +42,7 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
     );
   };
 
+  // Get the loading state for the question
   const loading = useAppSelector(
     (state) => state.questions.loading[question._id]
   );

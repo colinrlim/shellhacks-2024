@@ -1,6 +1,30 @@
-import mongoose, { Document, model } from "mongoose";
+// @/models/Topic
 
-// Define the relationship schema
+// Imports
+import mongoose, { Document, Model } from "mongoose";
+
+// Topic Interface Definition
+/**
+ * This defines the structure of a topic in the database.
+ */
+export interface ITopic extends Document {
+  name: string;
+  description: string;
+  relationships: {
+    description: string;
+    value: {
+      child_topic: string;
+      strength: number;
+    }[];
+  };
+  createdBy: string;
+  sessionId: string;
+}
+
+// Relationship Schema
+/**
+ * This defines the structure of a relationship in the database.
+ */
 const RelationshipSchema = new mongoose.Schema({
   child_topic: {
     type: String, // Storing the key as a string since it's an actual key
@@ -12,7 +36,10 @@ const RelationshipSchema = new mongoose.Schema({
   },
 });
 
-// Define the topic schema
+// Topic Schema
+/**
+ * This defines the Mongoose schema of a topic based on the ITopic interface.
+ */
 const TopicSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -42,22 +69,7 @@ const TopicSchema = new mongoose.Schema({
   },
 });
 
-// Create a model interface for Topic
-export interface ITopic extends Document {
-  name: string;
-  description: string;
-  relationships: {
-    description: string;
-    value: {
-      child_topic: string;
-      strength: number;
-    }[];
-  };
-  createdBy: string;
-  sessionId: string;
-}
-
 // Create and export the model
-const Topic =
+const Topic: Model<ITopic> =
   mongoose.models.Topic || mongoose.model<ITopic>("Topic", TopicSchema);
 export default Topic;

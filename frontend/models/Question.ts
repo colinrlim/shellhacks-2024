@@ -1,5 +1,12 @@
+// @/models/Question
+
+// Imports
 import mongoose, { Document, Model } from "mongoose";
 
+// Question Interface Definition
+/**
+ * This defines the structure of a question in the database.
+ */
 export interface IQuestion extends Document {
   question: string;
   choices: Record<"1" | "2" | "3" | "4", string>;
@@ -12,6 +19,10 @@ export interface IQuestion extends Document {
   explanation?: string;
 }
 
+// Question Schema
+/**
+ * This defines the Mongoose schema of a question based on the IQuestion interface.
+ */
 const QuestionSchema = new mongoose.Schema<IQuestion>({
   question: { type: String, required: true },
   choices: {
@@ -32,11 +43,12 @@ const QuestionSchema = new mongoose.Schema<IQuestion>({
   explanation: { type: String },
 });
 
-// Clear model cache if necessary
+// Model Cache Management
 if (mongoose.models.Question) {
   delete mongoose.models.Question;
 }
 
+// Model Creation
 const Question: Model<IQuestion> =
   mongoose.models.Question ||
   mongoose.model<IQuestion>("Question", QuestionSchema);

@@ -1,6 +1,5 @@
 // app/dashboard/page.tsx (or pages/dashboard.tsx if you're in Next.js 12)
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
-import { withProtected } from "@/hoc";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { FaPaperPlane } from "react-icons/fa"; // Example icon from react-icons
@@ -8,6 +7,7 @@ import { useAppSelector } from "@/store/types";
 import { useAppDispatch } from "@/store";
 import { clearUser } from "@/store/slices/userSlice";
 import { setCurrentTopic } from "@/store/slices/knowledgeSlice";
+import { withProtected } from "@/hoc";
 
 function Dashboard() {
   const dispatch = useAppDispatch();
