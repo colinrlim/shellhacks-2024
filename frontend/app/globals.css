@@ -35,9 +35,6 @@ body {
   }
 }
 
-.questions__container::-webkit-scrollbar {
-}
-
 .questions__container {
   scrollbar-width: none;
   -ms-overflow-style: none;
