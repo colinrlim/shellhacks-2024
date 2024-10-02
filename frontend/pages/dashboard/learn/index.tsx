@@ -64,7 +64,15 @@ function Learn() {
       // Begin animation
       controls.start("animate");
     }
-  }, [mounted, user, currentTopic, questions.length, dispatch, sessionId]);
+  }, [
+    mounted,
+    user,
+    currentTopic,
+    questions.length,
+    dispatch,
+    sessionId,
+    controls,
+  ]);
 
   // Now after sessionActive is changed from false to true, we can get the questions
   useEffect(() => {

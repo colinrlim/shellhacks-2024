@@ -61,7 +61,7 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
         }, 500);
       }
     }
-  }, [loading]);
+  }, [loading, questionNumber]);
 
   // Animations
   const questionVariants = {
