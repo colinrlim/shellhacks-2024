@@ -7,6 +7,14 @@
   --foreground: #171717;
 }
 
+*::-webkit-scrollbar {
+  width: 0;
+}
+
+body::-webkit-scrollbar {
+  width: default;
+}
+
 /* commenting for now until we have a dark mode switcher
 \ @media (prefers-color-scheme: dark) {
   :root {
@@ -25,4 +33,21 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+.questions__container::-webkit-scrollbar {
+}
+
+.questions__container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.question__container::-webkit-scrollbar {
+  display: none;
+}
+
+.question__container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }

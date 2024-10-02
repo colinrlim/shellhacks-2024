@@ -13,6 +13,7 @@ import { IoPersonCircleOutline } from "react-icons/io5";
 import { SlLogout } from "react-icons/sl";
 import { usePathname } from "next/navigation";
 import { RxReset } from "react-icons/rx";
+import { motion } from "framer-motion";
 
 function ProfilePopover() {
   const dispatch = useAppDispatch();
@@ -39,10 +40,14 @@ function ProfilePopover() {
   };
 
   return (
-    <div
+    <motion.div
       className="fixed bottom-4 left-4 z-50 border-gray-300 border rounded-md group hover:rounded-t-none overflow-hidden"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      initial={{ opacity: 0, x: -100 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.6 }}
+      viewport={{ once: true }}
     >
       {/* Expanded Options */}
       <div
@@ -99,7 +104,7 @@ function ProfilePopover() {
 
       {/* Profile Modal */}
       <ProfileModal isOpen={isProfileModalOpen} onClose={toggleProfileModal} />
-    </div>
+    </motion.div>
   );
 }
 

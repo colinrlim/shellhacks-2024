@@ -10,10 +10,12 @@ import { useAppDispatch } from "@/store";
 import { setCurrentTopic, resetSession } from "@/store/slices/knowledgeSlice";
 import { withProtected } from "@/hoc";
 import { setQuestions } from "@/store/slices/questionsSlice";
+import { motion, useAnimationControls } from "framer-motion";
 
 // Dashboard Component
 function Dashboard() {
   const dispatch = useAppDispatch();
+  const controls = useAnimationControls();
   const user = useAppSelector((state) => state.user.userInfo);
   const router = useRouter();
   const { name } = user || {};
@@ -25,26 +27,118 @@ function Dashboard() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // First, we dispatch a sessionReset() to ensure the session is reset, in case this is not the first time the user is selecting a topic
-    dispatch(resetSession());
-    dispatch(setQuestions([]));
+    controls.start("exit");
 
-    // Set current topic in Redux store
-    dispatch(setCurrentTopic(input));
-    router.push("/dashboard/learn");
+    setTimeout(() => {
+      // First, we dispatch a sessionReset() to ensure the session is reset, in case this is not the first time the user is selecting a topic
+      dispatch(resetSession());
+      dispatch(setQuestions([]));
+
+      // Set current topic in Redux store
+      dispatch(setCurrentTopic(input));
+      router.push("/dashboard/learn");
+    }, 600);
+  };
+
+  // Animation Variants
+  const headerVariants = {
+    initial: {
+      opacity: 0,
+      y: -250,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+    },
+    exit: {
+      opacity: 0,
+      y: -250,
+      transition: {
+        duration: 0.6,
+        amount: 0.2,
+        ease: "easeOut",
+      },
+    },
+  };
+
+  const labelVariants = {
+    initial: { opacity: 0, y: -250 },
+    animate: {
+      opacity: 1,
+      y: 0,
+    },
+    exit: {
+      opacity: 0,
+      y: -250,
+      transition: {
+        duration: 0.4,
+        amount: 0.2,
+        ease: "easeOut",
+        delay: 0.2,
+      },
+    },
+  };
+
+  const formVariants = {
+    initial: { opacity: 0, y: 100 },
+    animate: { opacity: 1, y: 0 },
+    exit: {
+      opacity: 0,
+      y: 200,
+      transition: {
+        duration: 0.8,
+        amount: 0.2,
+        ease: "easeOut",
+      },
+    },
   };
 
   return (
     <div className="flex h-screen items-center justify-center bg-white">
-      <div className="text-center">
-        <h1 className="text-5xl font-semibold mb-6">
+      <motion.div className="text-center">
+        <motion.h1
+          className="text-5xl font-semibold mb-6"
+          variants={headerVariants}
+          initial="initial"
+          animate={controls}
+          whileInView="animate"
+          transition={{
+            duration: 0.6,
+            amount: 0.2,
+            ease: "easeOut",
+            delay: 0.2,
+          }}
+          exit="exit"
+        >
           Hello, {name || "User"}!
-        </h1>
-        <p className="text-2xl font-light mb-10">
+        </motion.h1>
+        <motion.p
+          className="text-2xl font-light mb-10"
+          variants={labelVariants}
+          initial="initial"
+          animate={controls}
+          whileInView="animate"
+          exit="exit"
+          transition={{ duration: 0.6, amount: 0.2, ease: "easeOut" }}
+        >
           What would you like to learn today?
-        </p>
+        </motion.p>
 
-        <form onSubmit={handleSubmit} className="relative max-w-2xl mx-auto">
+        <motion.form
+          onSubmit={handleSubmit}
+          className="relative max-w-2xl mx-auto"
+          variants={formVariants}
+          initial="initial"
+          animate={controls}
+          whileInView="animate"
+          exit="exit"
+          transition={{
+            duration: 0.3,
+            amount: 0.2,
+            ease: "easeOut",
+            delay: 0.4,
+          }}
+        >
           <input
             type="text"
             className="block w-full py-4 px-6 text-xl border border-gray-300 rounded-md focus:outline-none focus:border-gray-400 placeholder-gray-500"
@@ -60,8 +154,8 @@ function Dashboard() {
           >
             <FaPaperPlane className="h-6 w-6" />
           </button>
-        </form>
-      </div>
+        </motion.form>
+      </motion.div>
     </div>
   );
 }

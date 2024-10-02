@@ -9,12 +9,14 @@ import { getQuestions, startSession } from "@/store/slices/knowledgeSlice";
 import { dismissResetTip } from "@/store/slices/uiSlice";
 import Question from "@/components/Question";
 import { Loader } from "@/components";
+import { motion, useAnimationControls } from "framer-motion";
 
 function Learn() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.user.userInfo);
   const sessionId = useAppSelector((state) => state.user.sessionId);
   const router = useRouter();
+  const controls = useAnimationControls();
 
   // Local state for mounted
   const [mounted, setMounted] = useState(false);
@@ -58,6 +60,9 @@ function Learn() {
           sessionId,
         })
       );
+
+      // Begin animation
+      controls.start("animate");
     }
   }, [mounted, user, currentTopic, questions.length, dispatch, sessionId]);
 
@@ -74,17 +79,73 @@ function Learn() {
     }
   }, [sessionActive, sessionId, currentTopic, dispatch]);
 
+  // Animation Variants
+
+  const containerVariants = {
+    initial: {
+      opacity: 0,
+    },
+    animate: {
+      opacity: 1,
+      transition: {
+        duration: 0.3,
+      },
+    },
+  };
+
+  const headerVariants = {
+    initial: {
+      opacity: 0,
+      y: -100,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+    },
+  };
+
+  const tipVariants = {
+    initial: {
+      x: -200,
+    },
+    whileInView: {
+      x: 0,
+      transition: { type: "spring", duration: 0.5, bounce: 0.3 },
+    },
+    closeTip: {
+      x: -200,
+      transition: {
+        duration: 0.3,
+      },
+    },
+  };
+
   return (
     <>
-      <div className="flex justify-center w-full min-h-screen bg-gray-100">
+      <div className="flex justify-center w-full min-h-screen">
         {/* Center wrapper with borders */}
-        <div className="w-full max-w-2xl bg-white border-x border-gray-300">
-          <div className="p-4">
-            <h1 className="text-2xl font-bold mb-4 text-center">
+        <motion.div
+          className="questions__container w-full max-w-2xl bg-white border-x border-gray-300"
+          variants={containerVariants}
+          initial="initial"
+          animate={controls}
+        >
+          <div className="p-4 overflow-x-hidden">
+            <motion.h1
+              className="text-2xl font-bold mb-4 text-center"
+              variants={headerVariants}
+              initial="initial"
+              animate={controls}
+            >
               {currentTopic || "Topic Title"}
-            </h1>
-            {!dismissedResetTip && (
-              <div className="relative">
+            </motion.h1>
+            {!dismissedResetTip && !loading && (
+              <motion.div
+                className="relative"
+                variants={tipVariants}
+                initial="initial"
+                whileInView="whileInView"
+              >
                 <div
                   id="tip"
                   className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded-md"
@@ -104,7 +165,7 @@ function Learn() {
                     </button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
             {/* Render questions */}
             {loading && (
@@ -136,7 +197,7 @@ function Learn() {
                 />
               ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </>
   );

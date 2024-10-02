@@ -1,12 +1,13 @@
 // @/components/Question
 
 // Imports
-import React from "react";
+import React, { useEffect } from "react";
 import { Question as QuestionType } from "@/types";
 import { answerQuestion } from "@/store/slices/questionsSlice";
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
 import { Loader } from "@/components";
+import { motion } from "framer-motion";
 
 // Question component props
 interface QuestionProps {
@@ -47,14 +48,85 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
     (state) => state.questions.loading[question._id]
   );
 
+  // When loading is changed from true to false
+  useEffect(() => {
+    if (!loading) {
+      // Scroll to the selected choice
+      const selectedChoice = document.querySelector(
+        `#question-${questionNumber}`
+      );
+      if (selectedChoice) {
+        setTimeout(() => {
+          selectedChoice.scrollIntoView({ behavior: "smooth" });
+        }, 500);
+      }
+    }
+  }, [loading]);
+
+  // Animations
+  const questionVariants = {
+    initial: {
+      opacity: 0,
+      y: 100,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.4,
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const choiceVariants = {
+    initial: {
+      opacity: 0,
+      y: 50,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        duration: 0.8,
+        ease: "easeOut",
+        bounce: 0.4,
+      },
+    },
+  };
+
+  const answerVariants = {
+    initial: {
+      opacity: 0,
+      x: -200,
+    },
+    animate: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
   return (
-    <div className="mb-6 relative">
+    <motion.div
+      className="mb-6 relative"
+      variants={questionVariants}
+      initial="initial"
+      whileInView="animate"
+      viewport={{ once: true }}
+      id={`question-${questionNumber}`}
+    >
       {" "}
       {/* Make the container relative for absolute positioning */}
       <p className="mb-2">
         Question #{questionNumber}: {question.question}
       </p>
-      <div className="space-y-2 relative">
+      <div className="space-y-2 relative question__container">
         {" "}
         {/* Position relative to contain the absolute spinner */}
         {choices.map(([key, value]) => {
@@ -75,14 +147,18 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
           }
 
           return (
-            <button
+            <motion.button
               key={key}
               className={buttonClass}
               onClick={() => handleAnswerQuestion(choiceKey)}
               disabled={!!question.selectedChoice || loading}
+              variants={choiceVariants}
+              initial="initial"
+              animate="animate"
+              viewport={{ once: true }}
             >
               {value}
-            </button>
+            </motion.button>
           );
         })}
         {loading && (
@@ -92,20 +168,32 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
         )}
       </div>
       {question.selectedChoice && (
-        <p
+        <motion.p
           className={`mt-2 ${
             question.isCorrect ? "text-green-500" : "text-red-500"
           }`}
+          variants={answerVariants}
+          initial="initial"
+          animate="animate"
+          viewport={{ once: true }}
         >
           {question.isCorrect
             ? "Correct!"
             : `Incorrect. Correct answer: ${question.correctChoice}`}
           {question.explanation && (
-            <p className="text-gray-400 text-sm">{question.explanation}</p>
+            <motion.p
+              className="text-gray-400 text-sm"
+              variants={answerVariants}
+              initial="initial"
+              animate="animate"
+              viewport={{ once: true }}
+            >
+              {question.explanation}
+            </motion.p>
           )}
-        </p>
+        </motion.p>
       )}
-    </div>
+    </motion.div>
   );
 }
 
