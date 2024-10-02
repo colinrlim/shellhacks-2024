@@ -3,6 +3,10 @@
 // Imports
 import mongoose, { Document, Model } from "mongoose";
 
+// Relationship Interface Definition
+/**
+ * This defines the structure of a relationship in the database.
+ */
 export interface IRelationship {
   child_topic: string;
   strength: number;
@@ -66,6 +70,14 @@ const TopicSchema = new mongoose.Schema<ITopic>({
     required: true,
   },
 });
+
+// Handle model cache
+/**
+ * This handles the model cache to prevent model overwrite.
+ */
+if (mongoose.models.Topic) {
+  delete mongoose.models.Topic;
+}
 
 // Create and export the model
 const Topic: Model<ITopic> =

@@ -1,7 +1,13 @@
+// @/utils/dbConnect
+/**
+ * Database connection using mongoose
+ */
+
+// Imports
 import mongoose from "mongoose";
 
+// Database connection
 const { MONGODB_URI } = process.env;
-
 if (!MONGODB_URI) {
   throw new Error(
     "Please define the MONGODB_URI environment variable inside .env.local"

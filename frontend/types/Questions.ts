@@ -1,5 +1,6 @@
-// Question Types
+// @/types/Questions
 
+// QuestionProp interface
 export interface QuestionProp {
   _id: number;
   question: string;
@@ -10,6 +11,7 @@ export interface QuestionProp {
   explanation: string;
 }
 
+// HistoricalQuestion interface
 export interface HistoricalQuestion {
   question: QuestionProp;
   selectedChoice: number;

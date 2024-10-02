@@ -1,4 +1,4 @@
-// store/types.ts
+// @/store/types
 import { RootState, AppDispatch } from "./index";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 

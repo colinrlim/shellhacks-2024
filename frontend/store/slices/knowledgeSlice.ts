@@ -1,9 +1,15 @@
-// knowledgeSlice.ts
+// @/store/slices/knowledgeSlice
+/**
+ * This is the knowledge slice of the Redux store.
+ * It contains the knowledge state and reducers for setting topics and the current topic.
+ */
 
+// Imports
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { setQuestions } from "./questionsSlice"; // Adjust the path as necessary
 
+// Topic interface
 interface Topic {
   description: string;
   relationships: {
@@ -15,6 +21,7 @@ interface Topic {
   }[];
 }
 
+// Knowledge state interface
 interface KnowledgeState {
   topics: Record<string, Topic>;
   currentTopic: string | null;
@@ -23,6 +30,7 @@ interface KnowledgeState {
   sessionActive: boolean;
 }
 
+// Initial state of knowledge slice
 const initialState: KnowledgeState = {
   topics: {},
   currentTopic: null,
@@ -31,6 +39,7 @@ const initialState: KnowledgeState = {
   sessionActive: false,
 };
 
+// Payload for starting a session
 interface StartSessionPayloadProps {
   topic: string;
   sessionId: string;
@@ -38,16 +47,16 @@ interface StartSessionPayloadProps {
 
 // Async thunk to start a session
 export const startSession = createAsyncThunk(
-  "knowledge/startSession",
+  "knowledge/startSession", // Slice name
   async (payload: StartSessionPayloadProps, { dispatch, rejectWithValue }) => {
-    let { topic, sessionId } = payload;
+    const { topic, sessionId } = payload;
     try {
       // Send PUT request to start the session
       const response = await axios.put("/api/questions/startSession", {
         topic,
         sessionId,
       });
-      const data = response.data;
+      const { data } = response;
 
       // Set the current topic
       dispatch(setCurrentTopic(topic));
@@ -58,10 +67,11 @@ export const startSession = createAsyncThunk(
       }
 
       return data;
-    } catch (error: any) {
-      // Handle error appropriately
-      console.log(error);
-      return rejectWithValue(error.response?.data?.message || error.message);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.log(error);
+        return rejectWithValue(error.response?.data?.message || error.message);
+      }
     }
   }
 );
@@ -69,11 +79,11 @@ export const startSession = createAsyncThunk(
 export const getQuestions = createAsyncThunk(
   "knowledge/getQuestions",
   async (payload: StartSessionPayloadProps, { dispatch, rejectWithValue }) => {
-    let { topic, sessionId } = payload;
+    const { sessionId } = payload;
     try {
       // Send PUT request to start the session
       const response = await axios.get(`/api/questions?sessionId=${sessionId}`);
-      const data = response.data;
+      const { data } = response;
 
       // If questions were updated, dispatch setQuestions
       if (data.updateFlags.questions) {
@@ -86,14 +96,16 @@ export const getQuestions = createAsyncThunk(
       }
 
       return data;
-    } catch (error: any) {
-      // Handle error appropriately
-      console.log(error);
-      return rejectWithValue(error.response?.data?.message || error.message);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.log(error);
+        return rejectWithValue(error.response?.data?.message || error.message);
+      }
     }
   }
 );
 
+// Knowledge slice
 const knowledgeSlice = createSlice({
   name: "knowledge",
   initialState,
@@ -111,10 +123,9 @@ const knowledgeSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(startSession.fulfilled, (state, action) => {
+      .addCase(startSession.fulfilled, (state) => {
         state.loading = false;
         state.sessionActive = true;
-        // You can handle additional state updates here if needed
       })
       .addCase(startSession.rejected, (state, action) => {
         state.loading = false;

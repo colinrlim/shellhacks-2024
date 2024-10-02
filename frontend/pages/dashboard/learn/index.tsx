@@ -1,6 +1,8 @@
+// * /dashboard/learn
+
+// Imports
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
 import { getQuestions, startSession } from "@/store/slices/knowledgeSlice";
@@ -13,7 +15,10 @@ function Learn() {
   const sessionId = useAppSelector((state) => state.user.sessionId);
   const router = useRouter();
 
+  // Local state for mounted
   const [mounted, setMounted] = useState(false);
+
+  // Redux states
   const currentTopic = useAppSelector((state) => state.knowledge.currentTopic);
   const questions = useAppSelector((state) => state.questions.questions);
   const sessionActive = useAppSelector(

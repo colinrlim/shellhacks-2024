@@ -1,16 +1,23 @@
-// questionsSlice.ts
+// @/store/slices/questionsSlice
+/**
+ * This is the questions slice of the Redux store.
+ * It contains the questions state and reducers for setting questions, favorited questions, and historical questions.
+ */
 
+// Imports
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { Question, HistoricalQuestion } from "@/types";
 import axios from "axios";
 import { setTopics } from "./knowledgeSlice";
 
+// Interface for the payload of the answerQuestion async thunk
 interface AnswerQuestionPayloadProps {
   questionId: number;
   selectedChoice: number;
   currentTopic: string;
 }
 
+// Async thunk to answer a question
 export const answerQuestion = createAsyncThunk(
   "questions/answerQuestion",
   async (
@@ -18,31 +25,38 @@ export const answerQuestion = createAsyncThunk(
     thunkAPI
   ) => {
     try {
+      // Send POST request to answer the question
       const response = await axios.post("/api/questions/answer", {
         questionId,
         selectedChoice,
         currentTopic,
       });
-
       const { data } = response;
+
+      // Check if questions or topics were updated, and dispatch the appropriate actions
       if (data.updateFlags.questions) {
         thunkAPI.dispatch(setQuestions(data.payload.questions));
       }
-
       if (data.updateFlags.topics) {
         thunkAPI.dispatch(setTopics(data.payload.topics));
       }
 
       return data;
-    } catch (error: any) {
-      return error.response?.data?.message || error.message;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return thunkAPI.rejectWithValue(
+          error.response?.data?.message || error.message
+        );
+      }
     }
   }
 );
-
+// Interface for the loading states
 interface LoadingState {
   [key: string]: boolean;
 }
+
+// Interface for the questions state
 interface QuestionsState {
   questions: Question[];
   favoritedQuestions: Question[];
@@ -51,6 +65,7 @@ interface QuestionsState {
   error: string | null;
 }
 
+// Initial state for the questions slice
 const initialState: QuestionsState = {
   questions: [],
   favoritedQuestions: [],
@@ -59,6 +74,7 @@ const initialState: QuestionsState = {
   error: null,
 };
 
+// Questions slice
 const questionsSlice = createSlice({
   name: "questions",
   initialState,

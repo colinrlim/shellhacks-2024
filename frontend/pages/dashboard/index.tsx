@@ -1,30 +1,31 @@
-// app/dashboard/page.tsx (or pages/dashboard.tsx if you're in Next.js 12)
+// * /dashboard
+
+// Imports
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { FaPaperPlane } from "react-icons/fa"; // Example icon from react-icons
 import { useAppSelector } from "@/store/types";
 import { useAppDispatch } from "@/store";
-import { clearUser } from "@/store/slices/userSlice";
 import { setCurrentTopic } from "@/store/slices/knowledgeSlice";
 import { withProtected } from "@/hoc";
 
+// Dashboard Component
 function Dashboard() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.user.userInfo);
-  const [input, setInput] = useState("");
   const router = useRouter();
-
-  if (!user) dispatch(clearUser());
   const { name } = user || {};
 
+  // Local state for input
+  const [input, setInput] = useState("");
+
+  // Handle topic submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Here we want to use redux to set the topic in the store
-    // and then redirect to the learn page
+    // Set current topic in Redux store
     dispatch(setCurrentTopic(input));
-
     router.push("/dashboard/learn");
   };
 
