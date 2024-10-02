@@ -1,4 +1,5 @@
 // * Home Page
+// Deploy 1.0.6
 export default function Home() {
   // No one should see this page until we create a public landing page
   return (
