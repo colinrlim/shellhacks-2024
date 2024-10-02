@@ -3,6 +3,11 @@
 // Imports
 import mongoose, { Document, Model } from "mongoose";
 
+export interface IRelationship {
+  child_topic: string;
+  strength: number;
+}
+
 // Topic Interface Definition
 /**
  * This defines the structure of a topic in the database.
@@ -10,37 +15,36 @@ import mongoose, { Document, Model } from "mongoose";
 export interface ITopic extends Document {
   name: string;
   description: string;
-  relationships: {
-    description: string;
-    value: {
-      child_topic: string;
-      strength: number;
-    }[];
-  };
+  relationships: IRelationship[];
   createdBy: string;
   sessionId: string;
 }
 
 // Relationship Schema
 /**
- * This defines the structure of a relationship in the database.
+ * This defines the Mongoose schema of a relationship based on the IRelationship interface.
  */
-const RelationshipSchema = new mongoose.Schema({
-  child_topic: {
-    type: String, // Storing the key as a string since it's an actual key
-    required: true,
+const RelationshipSchema = new mongoose.Schema<IRelationship>(
+  {
+    child_topic: {
+      type: String,
+      required: true,
+    },
+    strength: {
+      type: Number,
+      required: true,
+    },
   },
-  strength: {
-    type: Number,
-    required: true,
-  },
-});
+  {
+    toObject: { virtuals: true },
+  }
+);
 
 // Topic Schema
 /**
  * This defines the Mongoose schema of a topic based on the ITopic interface.
  */
-const TopicSchema = new mongoose.Schema({
+const TopicSchema = new mongoose.Schema<ITopic>({
   name: {
     type: String,
     required: true,
@@ -50,14 +54,8 @@ const TopicSchema = new mongoose.Schema({
     required: true,
   },
   relationships: {
-    description: {
-      type: String,
-      default: "All listed relationships are to child_topics of this topic.",
-    },
-    value: {
-      type: [RelationshipSchema],
-      default: [],
-    },
+    type: [RelationshipSchema],
+    default: [],
   },
   createdBy: {
     type: String,
