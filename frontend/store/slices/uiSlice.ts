@@ -7,11 +7,13 @@ import { createSlice } from "@reduxjs/toolkit";
 // UI state interface
 interface UIState {
   isProfileModalOpen: boolean;
+  dismissedResetTip: boolean;
 }
 
 // Initial state of UI slice
 const initialState: UIState = {
   isProfileModalOpen: false,
+  dismissedResetTip: false,
 };
 
 // UI slice
@@ -25,9 +27,13 @@ const uiSlice = createSlice({
     closeProfileModal(state) {
       state.isProfileModalOpen = false;
     },
+    dismissResetTip(state) {
+      state.dismissedResetTip = true;
+    },
   },
 });
 
-export const { openProfileModal, closeProfileModal } = uiSlice.actions;
+export const { openProfileModal, closeProfileModal, dismissResetTip } =
+  uiSlice.actions;
 
 export default uiSlice.reducer;

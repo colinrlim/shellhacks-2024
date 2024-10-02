@@ -57,14 +57,16 @@ export const startSession = createAsyncThunk(
         sessionId,
       });
       const { data } = response;
+      console.log(data);
 
       // Set the current topic
       dispatch(setCurrentTopic(topic));
 
       // If questions were updated, dispatch setQuestions
-      if (data.updateFlags.questions) {
-        dispatch(setQuestions(data.payload.questions));
-      }
+      // if (data.updateFlags.questions) {
+      //   dispatch(setQuestions(data.payload.questions));
+      //   dispatch(getQuestions({ sessionId, topic }));
+      // }
 
       return data;
     } catch (error: unknown) {
@@ -84,6 +86,7 @@ export const getQuestions = createAsyncThunk(
       // Send PUT request to start the session
       const response = await axios.get(`/api/questions?sessionId=${sessionId}`);
       const { data } = response;
+      console.log(data);
 
       // If questions were updated, dispatch setQuestions
       if (data.updateFlags.questions) {
@@ -116,6 +119,10 @@ const knowledgeSlice = createSlice({
     setCurrentTopic(state, action: PayloadAction<string>) {
       state.currentTopic = action.payload;
     },
+    resetSession(state) {
+      state.sessionActive = false;
+      state.currentTopic = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -126,6 +133,7 @@ const knowledgeSlice = createSlice({
       .addCase(startSession.fulfilled, (state) => {
         state.loading = false;
         state.sessionActive = true;
+        // Call getQuestions to get the questions for the session
       })
       .addCase(startSession.rejected, (state, action) => {
         state.loading = false;
@@ -134,6 +142,7 @@ const knowledgeSlice = createSlice({
   },
 });
 
-export const { setTopics, setCurrentTopic } = knowledgeSlice.actions;
+export const { setTopics, setCurrentTopic, resetSession } =
+  knowledgeSlice.actions;
 
 export default knowledgeSlice.reducer;

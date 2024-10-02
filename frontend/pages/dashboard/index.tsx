@@ -7,8 +7,9 @@ import { useRouter } from "next/router";
 import { FaPaperPlane } from "react-icons/fa"; // Example icon from react-icons
 import { useAppSelector } from "@/store/types";
 import { useAppDispatch } from "@/store";
-import { setCurrentTopic } from "@/store/slices/knowledgeSlice";
+import { setCurrentTopic, resetSession } from "@/store/slices/knowledgeSlice";
 import { withProtected } from "@/hoc";
+import { setQuestions } from "@/store/slices/questionsSlice";
 
 // Dashboard Component
 function Dashboard() {
@@ -23,6 +24,10 @@ function Dashboard() {
   // Handle topic submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // First, we dispatch a sessionReset() to ensure the session is reset, in case this is not the first time the user is selecting a topic
+    dispatch(resetSession());
+    dispatch(setQuestions([]));
 
     // Set current topic in Redux store
     dispatch(setCurrentTopic(input));

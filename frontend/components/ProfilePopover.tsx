@@ -11,9 +11,12 @@ import { closeProfileModal, openProfileModal } from "@/store/slices/uiSlice";
 import ProfileModal from "./ProfileModal";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { SlLogout } from "react-icons/sl";
+import { usePathname } from "next/navigation";
+import { RxReset } from "react-icons/rx";
 
 function ProfilePopover() {
   const dispatch = useAppDispatch();
+  const pathname = usePathname();
 
   // User info fetched from the store
   const user = useAppSelector((state) => state.user.userInfo);
@@ -61,6 +64,17 @@ function ProfilePopover() {
               Profile
             </button>
           </li>
+          {pathname !== "/dashboard" && (
+            <li>
+              <Link
+                href="/dashboard"
+                className="w-full text-left block text-md px-4 py-2 text-black transition-colors"
+              >
+                <RxReset className="inline-block text-md mr-5 ml-2" />
+                Reset Topic
+              </Link>
+            </li>
+          )}
           <li>
             <Link
               href="/api/auth/logout"

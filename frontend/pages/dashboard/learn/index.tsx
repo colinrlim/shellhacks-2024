@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
 import { getQuestions, startSession } from "@/store/slices/knowledgeSlice";
+import { dismissResetTip } from "@/store/slices/uiSlice";
 import Question from "@/components/Question";
 import { Loader } from "@/components";
 
@@ -26,6 +27,9 @@ function Learn() {
   );
   const loading = useAppSelector((state) => state.knowledge.loading);
   const error = useAppSelector((state) => state.knowledge.error);
+  const dismissedResetTip = useAppSelector(
+    (state) => state.ui.dismissedResetTip
+  );
 
   // Ensure the component is mounted before routing
   useEffect(() => {
@@ -79,6 +83,29 @@ function Learn() {
             <h1 className="text-2xl font-bold mb-4 text-center">
               {currentTopic || "Topic Title"}
             </h1>
+            {!dismissedResetTip && (
+              <div className="relative">
+                <div
+                  id="tip"
+                  className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded-md"
+                  role="alert"
+                >
+                  <div className="flex justify-between items-start">
+                    <p className="text-sm">
+                      You can reset your topic by hovering over your name and
+                      selecting reset.
+                    </p>
+                    <button
+                      className="ml-4 bg-transparent text-blue-700 hover:text-blue-900 focus:outline-none"
+                      onClick={() => dispatch(dismissResetTip())}
+                      aria-label="Dismiss"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Render questions */}
             {loading && (
               <div className="absolute inset-0 flex items-center justify-center rounded">
