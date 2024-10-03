@@ -1,3 +1,4 @@
+// /api/questions/startSession
 // PATCH /api/questions/setTopic
 
 import type { NextApiRequest, NextApiResponse } from "next";

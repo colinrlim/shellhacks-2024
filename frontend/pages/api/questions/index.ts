@@ -1,3 +1,4 @@
+// /api/questions/index
 // GET /api/questions
 
 import type { NextApiRequest, NextApiResponse } from "next";

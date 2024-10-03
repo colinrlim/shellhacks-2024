@@ -1,4 +1,4 @@
-// * /dashboard/learn
+// @/pages/dashboard/learn/index.tsx
 
 // Imports
 import { useEffect, useState } from "react";
@@ -8,20 +8,28 @@ import { useAppSelector } from "@/store/types";
 import { getQuestions, startSession } from "@/store/slices/knowledgeSlice";
 import { dismissResetTip } from "@/store/slices/uiSlice";
 import Question from "@/components/Question";
+import GlassTooltip from "@/components/GlassTooltip";
 import { Loader } from "@/components";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 
+// * Learn
+/**
+ * Manages the learning session, displaying questions and handling user interactions
+ */
 function Learn() {
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.user.userInfo);
-  const sessionId = useAppSelector((state) => state.user.sessionId);
   const router = useRouter();
   const controls = useAnimationControls();
 
-  // Local state for mounted
   const [mounted, setMounted] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [hoveredQuestionId, setHoveredQuestionId] = useState<string | null>(
+    null
+  );
 
   // Redux states
+  const user = useAppSelector((state) => state.user.userInfo);
+  const sessionId = useAppSelector((state) => state.user.sessionId);
   const currentTopic = useAppSelector((state) => state.knowledge.currentTopic);
   const questions = useAppSelector((state) => state.questions.questions);
   const sessionActive = useAppSelector(
@@ -32,186 +40,146 @@ function Learn() {
   const dismissedResetTip = useAppSelector(
     (state) => state.ui.dismissedResetTip
   );
+  const allLoading = useAppSelector((state) => state.questions.loading);
 
-  // Ensure the component is mounted before routing
-  useEffect(() => {
+  const someLoading = Object.values(allLoading).some((value) => value === true);
+
+  useEffect(function handleMounting() {
     setMounted(true);
   }, []);
 
-  // Redirect to home if not logged in or no current topic
-  useEffect(() => {
-    if (mounted && (!user || !currentTopic || !sessionId)) {
-      router.push("/");
-    }
-  }, [mounted, currentTopic, user, router, sessionId]);
+  useEffect(
+    function handleRedirect() {
+      if (mounted && (!user || !currentTopic || !sessionId)) {
+        router.push("/");
+      }
+    },
+    [mounted, currentTopic, user, router, sessionId]
+  );
 
-  // Dispatch startSession when component mounts if currentTopic exists
-  useEffect(() => {
-    if (
-      mounted &&
-      user &&
-      currentTopic &&
-      questions.length === 0 &&
-      sessionId
-    ) {
-      dispatch(
-        startSession({
-          topic: currentTopic,
-          sessionId,
-        })
-      );
+  useEffect(
+    function handleSessionStart() {
+      if (
+        mounted &&
+        user &&
+        currentTopic &&
+        questions.length === 0 &&
+        sessionId
+      ) {
+        dispatch(startSession({ topic: currentTopic, sessionId }));
+        controls.start("animate");
+      }
+    },
+    [
+      mounted,
+      user,
+      currentTopic,
+      questions.length,
+      dispatch,
+      sessionId,
+      controls,
+    ]
+  );
 
-      // Begin animation
-      controls.start("animate");
-    }
-  }, [
-    mounted,
-    user,
-    currentTopic,
-    questions.length,
-    dispatch,
-    sessionId,
-    controls,
-  ]);
+  useEffect(
+    function handleGetQuestions() {
+      if (sessionActive && sessionId && currentTopic) {
+        dispatch(getQuestions({ topic: currentTopic, sessionId }));
+      }
+    },
+    [sessionActive, sessionId, currentTopic, dispatch]
+  );
 
-  // Now after sessionActive is changed from false to true, we can get the questions
-  useEffect(() => {
-    if (sessionActive && sessionId) {
-      if (!currentTopic) throw new Error("Current topic is not set");
-      dispatch(
-        getQuestions({
-          topic: currentTopic,
-          sessionId,
-        })
-      );
-    }
-  }, [sessionActive, sessionId, currentTopic, dispatch]);
-
-  // Animation Variants
+  function handleQuestionHover(isHovering: boolean, questionId: string) {
+    setShowTooltip(isHovering && someLoading);
+    setHoveredQuestionId(isHovering ? questionId : null);
+  }
 
   const containerVariants = {
-    initial: {
-      opacity: 0,
-    },
-    animate: {
-      opacity: 1,
-      transition: {
-        duration: 0.3,
-      },
-    },
-  };
-
-  const headerVariants = {
-    initial: {
-      opacity: 0,
-      y: -100,
-    },
-    animate: {
-      opacity: 1,
-      y: 0,
-    },
-  };
-
-  const tipVariants = {
-    initial: {
-      x: -200,
-    },
-    whileInView: {
-      x: 0,
-      transition: { type: "spring", duration: 0.5, bounce: 0.3 },
-    },
-    closeTip: {
-      x: -200,
-      transition: {
-        duration: 0.3,
-      },
-    },
+    initial: { opacity: 0 },
+    animate: { opacity: 1, transition: { duration: 0.3 } },
   };
 
   return (
-    <>
-      <div className="flex justify-center w-full min-h-screen">
-        {/* Center wrapper with borders */}
-        <motion.div
-          className="questions__container w-full max-w-2xl bg-white border-x border-gray-300"
-          variants={containerVariants}
-          initial="initial"
-          animate={controls}
-        >
-          <div className="p-4 overflow-x-hidden">
-            <motion.h1
-              className="text-2xl font-bold mb-4 text-center"
-              variants={headerVariants}
-              initial="initial"
-              animate={controls}
-            >
-              {currentTopic || "Topic Title"}
-            </motion.h1>
-            {!dismissedResetTip && !loading && (
-              <motion.div
-                className="relative"
-                variants={tipVariants}
-                initial="initial"
-                whileInView="whileInView"
-              >
-                <div
-                  id="tip"
-                  className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded-md"
-                  role="alert"
-                >
-                  <div className="flex justify-between items-start">
-                    <p className="text-sm">
-                      You can reset your topic by hovering over your name and
-                      selecting reset.
-                    </p>
-                    <button
-                      className="ml-4 bg-transparent text-blue-700 hover:text-blue-900 focus:outline-none"
-                      onClick={() => dispatch(dismissResetTip())}
-                      aria-label="Dismiss"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-            {/* Render questions */}
-            {loading && (
-              <div className="absolute inset-0 flex items-center justify-center rounded">
-                <Loader show={loading} />
-              </div>
-            )}
-            {/* Display Error if exists */}
-            {error && (
-              <div className="mb-4 text-red-500">
-                <p>Error: {error}</p>
+    <div className="flex justify-center w-full min-h-screen bg-gray-100">
+      <motion.div
+        className="w-full max-w-2xl bg-white shadow-xl"
+        variants={containerVariants}
+        initial="initial"
+        animate={controls}
+      >
+        <div className="p-6">
+          <h1 className="text-3xl font-bold mb-6 text-center">
+            {currentTopic || "Topic Title"}
+          </h1>
 
+          {!dismissedResetTip && !loading && (
+            <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded-md">
+              <div className="flex justify-between items-start">
+                <p className="text-sm">
+                  You can reset your topic by hovering over your name and
+                  selecting reset.
+                </p>
                 <button
-                  className="mt-2 bg-red-500 text-white px-4 py-2 rounded"
-                  onClick={() => router.push("/")}
+                  className="ml-4 text-blue-700 hover:text-blue-900 focus:outline-none"
+                  onClick={() => dispatch(dismissResetTip())}
+                  aria-label="Dismiss"
                 >
-                  Go Home
+                  ✕
                 </button>
               </div>
-            )}
+            </div>
+          )}
 
-            {currentTopic && (
-              <AnimatePresence>
-                {questions.map((question, index) => (
-                  <motion.div key={index} layout>
-                    <Question
-                      question={question}
-                      questionNumber={index + 1}
-                      currentTopic={currentTopic}
-                    />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            )}
-          </div>
-        </motion.div>
-      </div>
-    </>
+          {loading && (
+            <div className="flex justify-center items-center h-64">
+              <Loader show={loading} />
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-6 text-red-500">
+              <p>Error: {error}</p>
+              <button
+                className="mt-2 bg-red-500 text-white px-4 py-2 rounded"
+                onClick={() => router.push("/")}
+              >
+                Go Home
+              </button>
+            </div>
+          )}
+
+          {currentTopic && (
+            <AnimatePresence>
+              {questions.map((question, index) => (
+                <motion.div
+                  key={question._id}
+                  layout
+                  onMouseEnter={() =>
+                    handleQuestionHover(true, String(question._id))
+                  }
+                  onMouseLeave={() =>
+                    handleQuestionHover(false, String(question._id))
+                  }
+                >
+                  <Question
+                    question={question}
+                    questionNumber={index + 1}
+                    currentTopic={currentTopic}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+        </div>
+      </motion.div>
+
+      <GlassTooltip show={showTooltip}>
+        {hoveredQuestionId && allLoading[hoveredQuestionId]
+          ? "This question is loading. Please wait."
+          : "Please wait for the previous question's explanation before selecting an answer."}
+      </GlassTooltip>
+    </div>
   );
 }
 

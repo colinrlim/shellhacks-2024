@@ -80,7 +80,22 @@ const questionsSlice = createSlice({
   initialState,
   reducers: {
     setQuestions(state, action: PayloadAction<Question[]>) {
-      state.questions = action.payload;
+      if (state.questions.length === 0) {
+        state.questions = action.payload;
+      } else if (
+        state.questions.length < action.payload.length &&
+        action.payload.length > 0
+      ) {
+        for (
+          let i = state.questions.length + 1;
+          i < action.payload.length;
+          i++
+        ) {
+          state.questions.push(action.payload[i]);
+        }
+      } else {
+        state.questions = action.payload;
+      }
     },
     addQuestion(state, action: PayloadAction<Question>) {
       state.questions.unshift(action.payload);
