@@ -1,108 +1,100 @@
-// @/components/ProfilePopover
-
-// Imports
 import { useState } from "react";
-import { FaUser } from "react-icons/fa";
 import Link from "next/link";
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
 import { clearUser } from "@/store/slices/userSlice";
 import { closeProfileModal, openProfileModal } from "@/store/slices/uiSlice";
 import ProfileModal from "./ProfileModal";
-import { IoPersonCircleOutline } from "react-icons/io5";
-import { SlLogout } from "react-icons/sl";
 import { usePathname } from "next/navigation";
-import { RxReset } from "react-icons/rx";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, LogOut, RefreshCcw } from "lucide-react";
 
 function ProfilePopover() {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
 
-  // User info fetched from the store
   const user = useAppSelector((state) => state.user.userInfo);
   if (!user) dispatch(clearUser());
   const { name } = user || {};
 
-  // State for hover effect
-  const [isHovered, setIsHovered] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  // State for the profile modal open/close
   const isProfileModalOpen = useAppSelector(
     (state) => state.ui.isProfileModalOpen
   );
   const toggleProfileModal = () => {
     if (isProfileModalOpen) dispatch(closeProfileModal());
     else {
-      setIsHovered(false);
+      setIsOpen(false);
       dispatch(openProfileModal());
     }
   };
 
+  const toggleOpen = () => setIsOpen(!isOpen);
+
+  const containerVariants = {
+    closed: { width: "auto", height: "40px" },
+    open: { width: "200px", height: "auto", transition: { duration: 0.2 } },
+  };
+
+  const optionsVariants = {
+    closed: { opacity: 0, y: -10, pointerEvents: "none" as const },
+    open: { opacity: 1, y: 0, pointerEvents: "auto" as const },
+  };
+
   return (
     <motion.div
-      className="fixed bottom-4 left-4 z-50 border-gray-300 border rounded-md group hover:rounded-t-none overflow-hidden"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      initial={{ opacity: 0, x: -100 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6 }}
-      viewport={{ once: true }}
+      className="fixed bottom-4 left-4 z-50 bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200"
+      initial="closed"
+      animate={isOpen ? "open" : "closed"}
+      variants={containerVariants}
     >
-      {/* Expanded Options */}
-      <div
-        className={`
-          bottom-full left-0
-          bg-white bg-opacity-20 backdrop-blur-lg 
-          rounded-lg overflow-hidden 
-          transition-all duration-300
-          ${isHovered ? "opacity-100 max-h-60" : "opacity-0 max-h-0"}
-        `}
+      <button
+        className="w-full h-10 px-4 flex items-center justify-start text-gray-800 hover:bg-gray-50 transition-colors"
+        onClick={toggleOpen}
       >
-        <ul className="flex flex-col">
-          <li>
+        <span className="w-6 h-6 rounded-md bg-blue-500 text-white flex items-center justify-center text-sm font-medium mr-3">
+          {name?.[0]?.toUpperCase() || "U"}
+        </span>
+        <span className="text-sm font-medium truncate">{name}</span>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            variants={optionsVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+            className="px-2 pb-2"
+          >
             <button
-              className="w-full text-left text-md block px-4 py-2 text-black transition-colors"
+              className="w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
               onClick={toggleProfileModal}
             >
-              <IoPersonCircleOutline className="inline-block text-md mr-5 ml-2" />
+              <User size={16} className="mr-2" />
               Profile
             </button>
-          </li>
-          {pathname !== "/dashboard" && (
-            <li>
+            {pathname !== "/dashboard" && (
               <Link
                 href="/dashboard"
-                className="w-full text-left block text-md px-4 py-2 text-black transition-colors"
+                className="block w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
               >
-                <RxReset className="inline-block text-md mr-5 ml-2" />
+                <RefreshCcw size={16} className="mr-2" />
                 Reset Topic
               </Link>
-            </li>
-          )}
-          <li>
+            )}
             <Link
               href="/api/auth/logout"
-              className="w-full text-left block text-md px-4 py-2 text-black transition-colors"
+              className="block w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
             >
-              <SlLogout className="inline-block text-md mr-5 ml-2" />
+              <LogOut size={16} className="mr-2" />
               Logout
             </Link>
-          </li>
-        </ul>
-      </div>
-      <div
-        className={`
-          flex items-center p-3 bg-white bg-opacity-20 backdrop-blur-lg 
-          shadow-lg transition-all duration-300 
-          cursor-pointer px-6 group-hover:border-t group-hover:border-gray-300 gap-2
-        `}
-      >
-        <FaUser className="text-black text-xl mr-2" />
-        <span className="text-black truncate">{name}</span>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Profile Modal */}
       <ProfileModal isOpen={isProfileModalOpen} onClose={toggleProfileModal} />
     </motion.div>
   );

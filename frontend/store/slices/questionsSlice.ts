@@ -1,23 +1,16 @@
 // @/store/slices/questionsSlice
-/**
- * This is the questions slice of the Redux store.
- * It contains the questions state and reducers for setting questions, favorited questions, and historical questions.
- */
 
-// Imports
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { Question, HistoricalQuestion } from "@/types";
 import axios from "axios";
 import { setTopics } from "./knowledgeSlice";
 
-// Interface for the payload of the answerQuestion async thunk
 interface AnswerQuestionPayloadProps {
   questionId: number;
   selectedChoice: number;
   currentTopic: string;
 }
 
-// Async thunk to answer a question
 export const answerQuestion = createAsyncThunk(
   "questions/answerQuestion",
   async (
@@ -25,15 +18,14 @@ export const answerQuestion = createAsyncThunk(
     thunkAPI
   ) => {
     try {
-      // Send POST request to answer the question
       const response = await axios.post("/api/questions/answer", {
         questionId,
         selectedChoice,
         currentTopic,
       });
       const { data } = response;
+      console.log(selectedChoice, currentTopic, data);
 
-      // Check if questions or topics were updated, and dispatch the appropriate actions
       if (data.updateFlags.questions) {
         thunkAPI.dispatch(setQuestions(data.payload.questions));
       }
@@ -41,7 +33,7 @@ export const answerQuestion = createAsyncThunk(
         thunkAPI.dispatch(setTopics(data.payload.topics));
       }
 
-      return data;
+      return data.payload;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         return thunkAPI.rejectWithValue(
@@ -51,12 +43,29 @@ export const answerQuestion = createAsyncThunk(
     }
   }
 );
-// Interface for the loading states
+
+export const fetchExplanation = createAsyncThunk(
+  "questions/fetchExplanation",
+  async (questionId: number, thunkAPI) => {
+    try {
+      const response = await axios.get(
+        `/api/questions/${questionId}/explanation`
+      );
+      return response.data;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return thunkAPI.rejectWithValue(
+          error.response?.data?.message || error.message
+        );
+      }
+    }
+  }
+);
+
 interface LoadingState {
   [key: string]: boolean;
 }
 
-// Interface for the questions state
 interface QuestionsState {
   questions: Question[];
   favoritedQuestions: Question[];
@@ -65,7 +74,6 @@ interface QuestionsState {
   error: string | null;
 }
 
-// Initial state for the questions slice
 const initialState: QuestionsState = {
   questions: [],
   favoritedQuestions: [],
@@ -74,28 +82,12 @@ const initialState: QuestionsState = {
   error: null,
 };
 
-// Questions slice
 const questionsSlice = createSlice({
   name: "questions",
   initialState,
   reducers: {
     setQuestions(state, action: PayloadAction<Question[]>) {
-      if (state.questions.length === 0) {
-        state.questions = action.payload;
-      } else if (
-        state.questions.length < action.payload.length &&
-        action.payload.length > 0
-      ) {
-        for (
-          let i = state.questions.length + 1;
-          i < action.payload.length;
-          i++
-        ) {
-          state.questions.push(action.payload[i]);
-        }
-      } else {
-        state.questions = action.payload;
-      }
+      state.questions = action.payload;
     },
     addQuestion(state, action: PayloadAction<Question>) {
       state.questions.unshift(action.payload);
@@ -116,11 +108,16 @@ const questionsSlice = createSlice({
       if (!question) return;
 
       question.selectedChoice = selectedChoice;
-
-      if (question.selectedChoice === question.correctChoice) {
-        question.isCorrect = true;
-      } else {
-        question.isCorrect = false;
+      question.isCorrect = selectedChoice === question.correctChoice;
+    },
+    setExplanation(
+      state,
+      action: PayloadAction<{ questionId: number; explanation: string }>
+    ) {
+      const { questionId, explanation } = action.payload;
+      const question = state.questions.find((q) => q._id === questionId);
+      if (question) {
+        question.explanation = explanation;
       }
     },
   },
@@ -132,23 +129,35 @@ const questionsSlice = createSlice({
         state.error = null;
       })
       .addCase(answerQuestion.fulfilled, (state, action) => {
-        // We need to review which data changed
-        const thunkPayload = action.payload;
-        const { payload, updateFlags } = thunkPayload;
-
-        // If questions were updated, dispatch setQuestions
-        if (updateFlags && updateFlags.questions) {
-          state.questions = payload.questions;
-        }
-
         const { questionId } = action.meta.arg;
         state.loading[questionId] = false;
         state.error = null;
+
+        if (action.payload && action.payload.questions) {
+          const updatedQuestion = action.payload.questions.find(
+            (q: Question) => q._id === questionId
+          );
+          if (updatedQuestion) {
+            const index = state.questions.findIndex(
+              (q) => q._id === questionId
+            );
+            if (index !== -1) {
+              state.questions[index] = updatedQuestion;
+            }
+          }
+        }
       })
       .addCase(answerQuestion.rejected, (state, action) => {
         const { questionId } = action.meta.arg;
         state.loading[questionId] = false;
         state.error = action.payload as string;
+      })
+      .addCase(fetchExplanation.fulfilled, (state, action) => {
+        const { questionId, explanation } = action.payload;
+        const question = state.questions.find((q) => q._id === questionId);
+        if (question) {
+          question.explanation = explanation;
+        }
       });
   },
 });
@@ -158,6 +167,7 @@ export const {
   setFavoritedQuestions,
   addHistoricalQuestion,
   answerClientSideQuestion,
+  setExplanation,
 } = questionsSlice.actions;
 
 export default questionsSlice.reducer;

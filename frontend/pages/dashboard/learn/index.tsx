@@ -1,7 +1,7 @@
 // @/pages/dashboard/learn/index.tsx
 
 // Imports
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, RefObject, createRef } from "react";
 import { useRouter } from "next/router";
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
@@ -20,6 +20,8 @@ function Learn() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const controls = useAnimationControls();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const questionRefs = useRef<{ [key: string]: RefObject<HTMLDivElement> }>({});
 
   const [mounted, setMounted] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -90,6 +92,26 @@ function Learn() {
     [sessionActive, sessionId, currentTopic, dispatch]
   );
 
+  useEffect(() => {
+    if (containerRef.current && questions.length > 0) {
+      const lastAnsweredQuestionIndex =
+        questions.findIndex((q) => q.selectedChoice === undefined) - 1;
+
+      if (lastAnsweredQuestionIndex >= 0) {
+        const lastAnsweredQuestionId = questions[lastAnsweredQuestionIndex]._id;
+        const lastAnsweredQuestionElement =
+          questionRefs.current[lastAnsweredQuestionId]?.current;
+
+        if (lastAnsweredQuestionElement) {
+          lastAnsweredQuestionElement.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }
+    }
+  }, [questions]);
+
   function handleQuestionHover(isHovering: boolean, questionId: string) {
     setShowTooltip(isHovering && someLoading);
     setHoveredQuestionId(isHovering ? questionId : null);
@@ -97,24 +119,58 @@ function Learn() {
 
   const containerVariants = {
     initial: { opacity: 0 },
-    animate: { opacity: 1, transition: { duration: 0.3 } },
+    animate: { opacity: 1, transition: { duration: 0.5 } },
+    exit: { opacity: 0, transition: { duration: 0.3 } },
   };
 
+  const contentVariants = {
+    initial: { opacity: 0, y: 20 },
+    animate: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        delay: 0.2,
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+  };
+
+  useEffect(() => {
+    controls.start("animate");
+  }, [controls]);
+
   return (
-    <div className="flex justify-center w-full min-h-screen bg-gray-100">
+    <motion.div
+      className="flex justify-center w-full min-h-screen bg-gray-100"
+      variants={containerVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
       <motion.div
-        className="w-full max-w-2xl bg-white shadow-xl"
-        variants={containerVariants}
-        initial="initial"
-        animate={controls}
+        ref={containerRef}
+        className="w-full max-w-2xl bg-white shadow-xl overflow-y-auto min-h-screen"
+        variants={contentVariants}
       >
         <div className="p-6">
-          <h1 className="text-3xl font-bold mb-6 text-center">
+          <motion.h1
+            variants={itemVariants}
+            className="text-3xl font-bold mb-6 text-center"
+          >
             {currentTopic || "Topic Title"}
-          </h1>
+          </motion.h1>
 
           {!dismissedResetTip && !loading && (
-            <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded-md">
+            <motion.div
+              variants={itemVariants}
+              className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded-md"
+            >
               <div className="flex justify-between items-start">
                 <p className="text-sm">
                   You can reset your topic by hovering over your name and
@@ -128,17 +184,20 @@ function Learn() {
                   ✕
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {loading && (
-            <div className="flex justify-center items-center h-64">
+            <motion.div
+              variants={itemVariants}
+              className="flex justify-center items-center h-64"
+            >
               <Loader show={loading} />
-            </div>
+            </motion.div>
           )}
 
           {error && (
-            <div className="mb-6 text-red-500">
+            <motion.div variants={itemVariants} className="mb-6 text-red-500">
               <p>Error: {error}</p>
               <button
                 className="mt-2 bg-red-500 text-white px-4 py-2 rounded"
@@ -146,29 +205,39 @@ function Learn() {
               >
                 Go Home
               </button>
-            </div>
+            </motion.div>
           )}
 
           {currentTopic && (
             <AnimatePresence>
-              {questions.map((question, index) => (
-                <motion.div
-                  key={question._id}
-                  layout
-                  onMouseEnter={() =>
-                    handleQuestionHover(true, String(question._id))
-                  }
-                  onMouseLeave={() =>
-                    handleQuestionHover(false, String(question._id))
-                  }
-                >
-                  <Question
-                    question={question}
-                    questionNumber={index + 1}
-                    currentTopic={currentTopic}
-                  />
-                </motion.div>
-              ))}
+              {questions.map((question, index) => {
+                if (!questionRefs.current[question._id]) {
+                  questionRefs.current[question._id] =
+                    createRef<HTMLDivElement>();
+                }
+                return (
+                  <motion.div
+                    key={question._id}
+                    variants={itemVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="initial"
+                    onMouseEnter={() =>
+                      handleQuestionHover(true, String(question._id))
+                    }
+                    onMouseLeave={() =>
+                      handleQuestionHover(false, String(question._id))
+                    }
+                  >
+                    <Question
+                      ref={questionRefs.current[question._id]}
+                      question={question}
+                      questionNumber={index + 1}
+                      currentTopic={currentTopic}
+                    />
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           )}
         </div>
@@ -177,9 +246,9 @@ function Learn() {
       <GlassTooltip show={showTooltip}>
         {hoveredQuestionId && allLoading[hoveredQuestionId]
           ? "This question is loading. Please wait."
-          : "Please wait for the previous question's explanation before selecting an answer."}
+          : "Please wait for the explanation to load."}
       </GlassTooltip>
-    </div>
+    </motion.div>
   );
 }
 
