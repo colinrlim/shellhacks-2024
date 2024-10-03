@@ -39,6 +39,11 @@ type OnExplanationReceiveDataType = (
   session_id: string,
   explanation: string
 ) => void;
+type OnSetCurrentTopicDataType = (
+  uid: string,
+  session_id: string,
+  explanation: string
+) => void;
 type SendMetadataFromDatabasesType = (
   uid: string,
   session_id: string
@@ -54,6 +59,7 @@ const functions = {
   onRegisterRelationshipReceiveData:
     (() => {}) as OnRegisterRelationshipReceiveDataType,
   onExplanationReceiveData: (() => {}) as OnExplanationReceiveDataType,
+  onSetCurrentTopicReceiveData: (() => {}) as OnSetCurrentTopicDataType,
   sendMetadataFromDatabases: ((
     uid: string,
     session_id: string
@@ -93,6 +99,11 @@ export const setOnExplanationReceiveData = (
   fn: OnExplanationReceiveDataType
 ) => {
   functions.onExplanationReceiveData = fn;
+};
+export const setOnSetCurrentTopicReceiveData = (
+  fn: OnSetCurrentTopicDataType
+) => {
+  functions.onSetCurrentTopicReceiveData = fn;
 };
 export const setSendMetadataFromDatabases = (
   fn: SendMetadataFromDatabasesType
@@ -425,10 +436,12 @@ async function _do_calls(
           );
         }
       }
-
-      _generate_metadata(uid, session_id).then((metadata) => {
-        metadata.current_topic = function_call.arguments.name;
-      });
+      
+      functions.onSetCurrentTopicReceiveData(
+        uid,
+        session_id,
+        function_call.arguments.name
+      );
     } else if (function_call.name == "establish_relationship") {
       // Register node relationship DONE
       //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.prerequisite_topic ), true);
