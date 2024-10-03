@@ -24,7 +24,6 @@ export const answerQuestion = createAsyncThunk(
         currentTopic,
       });
       const { data } = response;
-      console.log(selectedChoice, currentTopic, data);
 
       if (data.updateFlags.questions) {
         thunkAPI.dispatch(setQuestions(data.payload.questions));
