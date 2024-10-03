@@ -91,6 +91,23 @@ const questionsSlice = createSlice({
     addHistoricalQuestion(state, action: PayloadAction<HistoricalQuestion>) {
       state.historicalQuestions.push(action.payload);
     },
+    answerClientSideQuestion(
+      state,
+      action: PayloadAction<AnswerQuestionPayloadProps>
+    ) {
+      const { questionId, selectedChoice } = action.payload;
+      const question = state.questions.find((q) => q._id === questionId);
+
+      if (!question) return;
+
+      question.selectedChoice = selectedChoice;
+
+      if (question.selectedChoice === question.correctChoice) {
+        question.isCorrect = true;
+      } else {
+        question.isCorrect = false;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -121,7 +138,11 @@ const questionsSlice = createSlice({
   },
 });
 
-export const { setQuestions, setFavoritedQuestions, addHistoricalQuestion } =
-  questionsSlice.actions;
+export const {
+  setQuestions,
+  setFavoritedQuestions,
+  addHistoricalQuestion,
+  answerClientSideQuestion,
+} = questionsSlice.actions;
 
 export default questionsSlice.reducer;

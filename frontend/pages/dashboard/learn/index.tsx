@@ -9,7 +9,7 @@ import { getQuestions, startSession } from "@/store/slices/knowledgeSlice";
 import { dismissResetTip } from "@/store/slices/uiSlice";
 import Question from "@/components/Question";
 import { Loader } from "@/components";
-import { motion, useAnimationControls } from "framer-motion";
+import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 
 function Learn() {
   const dispatch = useAppDispatch();
@@ -195,15 +195,19 @@ function Learn() {
               </div>
             )}
 
-            {currentTopic &&
-              questions.map((question, index) => (
-                <Question
-                  key={index}
-                  question={question}
-                  questionNumber={index + 1}
-                  currentTopic={currentTopic}
-                />
-              ))}
+            {currentTopic && (
+              <AnimatePresence>
+                {questions.map((question, index) => (
+                  <motion.div key={index} layout>
+                    <Question
+                      question={question}
+                      questionNumber={index + 1}
+                      currentTopic={currentTopic}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
           </div>
         </motion.div>
       </div>

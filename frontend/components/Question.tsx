@@ -3,7 +3,10 @@
 // Imports
 import React, { useEffect } from "react";
 import { Question as QuestionType } from "@/types";
-import { answerQuestion } from "@/store/slices/questionsSlice";
+import {
+  answerClientSideQuestion,
+  answerQuestion,
+} from "@/store/slices/questionsSlice";
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
 import { Loader } from "@/components";
@@ -32,6 +35,15 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
   // Handle answering the question
   const handleAnswerQuestion = (selectedChoice: 1 | 2 | 3 | 4) => {
     if (question.selectedChoice) return;
+
+    // Handle the question on the client side
+    dispatch(
+      answerClientSideQuestion({
+        questionId: question._id,
+        selectedChoice,
+        currentTopic,
+      })
+    );
 
     // Dispatch the event to the store
     dispatch(
@@ -63,7 +75,7 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
     }
   }, [loading, questionNumber]);
 
-  // Animations
+  // #region Animations Start *****/
   const questionVariants = {
     initial: {
       opacity: 0,
@@ -107,10 +119,24 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
       transition: {
         duration: 0.4,
         ease: "easeOut",
-        staggerChildren: 0.1,
       },
     },
   };
+
+  const explanationVariants = {
+    initial: {
+      opacity: 0,
+    },
+    animate: {
+      opacity: 1,
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+        delay: 0.2,
+      },
+    },
+  };
+  // #endregion Animations End *****/
 
   return (
     <motion.div
@@ -120,6 +146,7 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
       whileInView="animate"
       viewport={{ once: true }}
       id={`question-${questionNumber}`}
+      layout
     >
       {" "}
       {/* Make the container relative for absolute positioning */}
@@ -131,8 +158,11 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
         {/* Position relative to contain the absolute spinner */}
         {choices.map(([key, value]) => {
           const choiceKey = parseInt(key) as 1 | 2 | 3 | 4;
-          let buttonClass =
-            "w-full px-4 py-2 text-left border rounded cursor-pointer";
+          let buttonClass = "w-full px-4 py-2 text-left border rounded";
+
+          if (!question.selectedChoice) {
+            buttonClass += " cursor-pointer";
+          }
 
           if (question.selectedChoice) {
             if (choiceKey === question.correctChoice) {
@@ -151,7 +181,7 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
               key={key}
               className={buttonClass}
               onClick={() => handleAnswerQuestion(choiceKey)}
-              disabled={!!question.selectedChoice || loading}
+              disabled={loading || question.isCorrect !== undefined}
               variants={choiceVariants}
               initial="initial"
               animate="animate"
@@ -161,11 +191,6 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
             </motion.button>
           );
         })}
-        {loading && (
-          <div className="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center rounded">
-            <Loader show={loading} />
-          </div>
-        )}
       </div>
       {question.selectedChoice && (
         <motion.p
@@ -180,19 +205,43 @@ function Question({ question, questionNumber, currentTopic }: QuestionProps) {
           {question.isCorrect
             ? "Correct!"
             : `Incorrect. Correct answer: ${question.correctChoice}`}
-          {question.explanation && (
-            <motion.p
-              className="text-gray-400 text-sm"
-              variants={answerVariants}
-              initial="initial"
-              animate="animate"
-              viewport={{ once: true }}
-            >
-              {question.explanation}
-            </motion.p>
-          )}
         </motion.p>
       )}
+      {loading || question.explanation ? (
+        <motion.div
+          className={`inset-0 mt-2 bg-white bg-opacity-50 flex items-center justify-center align-top rounded ${
+            !question.explanation ? "md:min-h-28" : ""
+          }`}
+          variants={explanationVariants}
+          initial="initial"
+          animate="animate"
+          viewport={{ once: true }}
+        >
+          {loading && <Loader show={loading} />}
+          <p className="text-gray-400 text-sm">{question.explanation}</p>
+        </motion.div>
+      ) : null}
+      {/* {question.explanation ? (
+        <motion.p
+          className="text-gray-400 text-sm"
+          variants={explanationVariants}
+          initial="initial"
+          animate="animate"
+          viewport={{ once: true }}
+        >
+          {question.explanation}
+        </motion.p>
+      ) : (
+        <motion.div
+          className="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center rounded"
+          variants={explanationVariants}
+          initial="initial"
+          animate="animate"
+          viewport={{ once: true }}
+        >
+          <Loader show={loading} />
+        </motion.div>
+      )} */}
     </motion.div>
   );
 }
