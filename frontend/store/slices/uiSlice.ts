@@ -2,6 +2,7 @@
 // This is the UI slice of the Redux store. It contains the UI state and reducers for opening and closing the profile modal.
 
 // Imports
+import Logger from "@/utils/logger";
 import { createSlice } from "@reduxjs/toolkit";
 
 // UI state interface
@@ -23,12 +24,15 @@ const uiSlice = createSlice({
   reducers: {
     openProfileModal(state) {
       state.isProfileModalOpen = true;
+      Logger.debug("Profile modal opened");
     },
     closeProfileModal(state) {
       state.isProfileModalOpen = false;
+      Logger.debug("Profile modal closed");
     },
     dismissResetTip(state) {
       state.dismissedResetTip = true;
+      Logger.info("Reset tip dismissed");
     },
   },
 });

@@ -16,12 +16,16 @@ import {
 import dbConnect from "./dbConnect";
 import { Question, User } from "@/models";
 import Topic, { ITopic } from "@/models/Topic";
+import Logger from "@/utils/logger";
 
 setOnQuestionCreateReceiveData(
   async (uid, session_id, question) =>
     new Promise(async (resolve, reject) => {
       try {
         await dbConnect();
+        Logger.info(
+          `Creating new question for user ${uid}, session ${session_id}`
+        );
 
         // We have received a new question from the OpenAI endpoint
         // We need to save this question to the database
@@ -48,9 +52,10 @@ setOnQuestionCreateReceiveData(
           createdAt: new Date(),
           sessionId: session_id,
         });
+        Logger.debug(`Question created successfully for user ${uid}`);
         resolve();
       } catch (error) {
-        console.error(error);
+        Logger.error(`Error creating question for user ${uid}: ${error}`);
         reject();
       }
     })
@@ -60,6 +65,9 @@ setOnRegisterTopicReceiveData(
   async (uid, session_id, topic_name, topic_description) => {
     try {
       await dbConnect();
+      Logger.info(
+        `Registering/updating topic "${topic_name}" for user ${uid}, session ${session_id}`
+      );
 
       // First identify if the topic already exists
       const existingTopic = await Topic.findOne({
@@ -72,18 +80,21 @@ setOnRegisterTopicReceiveData(
       if (existingTopic) {
         existingTopic.description = topic_description || existingTopic.name;
         await existingTopic.save();
+        Logger.debug(`Updated existing topic "${topic_name}" for user ${uid}`);
       } else {
         // If the topic does not exist, create a new topic
-        console.log("registering topic");
         await Topic.create({
           name: topic_name,
           description: topic_description || "",
           createdBy: uid,
           sessionId: session_id,
         });
+        Logger.debug(`Created new topic "${topic_name}" for user ${uid}`);
       }
     } catch (error) {
-      console.error(error);
+      Logger.error(
+        `Error registering/updating topic for user ${uid}: ${error}`
+      );
     }
   }
 );
@@ -92,6 +103,9 @@ setOnRegisterRelationshipReceiveData(
   async (uid, session_id, topic_name, child_topic, strength) => {
     try {
       await dbConnect();
+      Logger.info(
+        `Registering relationship between "${topic_name}" and "${child_topic}" for user ${uid}, session ${session_id}`
+      );
 
       // Locate the prereqTopic in the database
       let prereqTopic = (await Topic.findOne({
@@ -108,52 +122,55 @@ setOnRegisterRelationshipReceiveData(
           createdBy: uid,
           sessionId: session_id,
         })) as ITopic;
+        Logger.debug(
+          `Created new prerequisite topic "${topic_name}" for user ${uid}`
+        );
       }
 
       // Add the new relationship to the prereqTopic
-
       prereqTopic.relationships.push({
         child_topic,
         strength,
       });
 
       await prereqTopic.save();
+      Logger.debug(`Relationship registered successfully for user ${uid}`);
     } catch (error) {
-      console.error(error);
+      Logger.error(`Error registering relationship for user ${uid}: ${error}`);
     }
   }
 );
+
 setOnExplanationReceiveData(async (uid, session_id, explanation) => {
   try {
     await dbConnect();
+    Logger.info(`Receiving explanation for user ${uid}, session ${session_id}`);
 
     const user = await User.findOne({ auth0Id: uid });
 
     if (!user) {
-      console.error("User not found");
+      Logger.error(`User not found: ${uid}`);
       return;
     }
 
     if (!user.currentTopic) {
-      console.error("User does not have a current topic");
+      Logger.error(`User ${uid} does not have a current topic`);
       return;
     }
 
     // Check for an existing explanation
     if (user.latestExplanation && !user.latestExplanation.saved) {
-      console.log("explanation avalalb");
-      // find tghe question
+      // find the question
       const question = await Question.findById(user.lastSubmitQuestion);
       if (!question) {
-        console.error("Question not found");
+        Logger.error(`Question not found for user ${uid}`);
         return;
       }
 
       // Set the explanation to the question
       question.explanation = explanation;
-      console.log("Explanation", explanation);
-      console.log("Question", question);
       await question.save();
+      Logger.debug(`Explanation saved to question for user ${uid}`);
 
       // Set the user's latestExplanation to the explanation
       user.latestExplanation = {
@@ -171,11 +188,13 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
         saved: false,
       };
       await user.save();
+      Logger.debug(`Latest explanation updated for user ${uid}`);
     }
   } catch (error) {
-    console.error(error);
+    Logger.error(`Error processing explanation for user ${uid}: ${error}`);
   }
 });
+
 // TODO Confirm this works as expected
 setSendMetadataFromDatabases(async (uid, session_id) => {
   const metadata: Metadata_T = {
@@ -186,18 +205,19 @@ setSendMetadataFromDatabases(async (uid, session_id) => {
   };
   try {
     await dbConnect();
+    Logger.info(`Fetching metadata for user ${uid}, session ${session_id}`);
 
     // Retrieve user session & details
     const user = await User.findOne({ auth0Id: uid });
 
     if (!user) {
-      console.error("User not found");
+      Logger.error(`User not found: ${uid}`);
       return metadata;
     }
 
     // Update metadata
     if (!user?.currentTopic) {
-      console.error("User does not have a current topic");
+      Logger.warn(`User ${uid} does not have a current topic`);
       return metadata;
     }
     metadata.current_topic = user.currentTopic;
@@ -274,63 +294,11 @@ setSendMetadataFromDatabases(async (uid, session_id) => {
       metadata.historical_questions.push(questionResponse);
     }
 
+    Logger.debug(`Metadata fetched successfully for user ${uid}`);
     // Return the metadata
   } catch (error) {
-    console.error(error);
+    Logger.error(`Error fetching metadata for user ${uid}: ${error}`);
   } finally {
     return metadata;
-  }
-});
-setOnExplanationReceiveData(async (uid, session_id, explanation) => {
-  try {
-    await dbConnect();
-
-    const user = await User.findOne({ auth0Id: uid });
-
-    if (!user) {
-      console.error("User not found");
-      return;
-    }
-
-    if (!user.currentTopic) {
-      console.error("User does not have a current topic");
-      return;
-    }
-
-    // Check for an existing explanation
-    if (user.latestExplanation && !user.latestExplanation.saved) {
-      console.log("explanation avalalb");
-      // find tghe question
-      const question = await Question.findById(user.lastSubmitQuestion);
-      if (!question) {
-        console.error("Question not found");
-        return;
-      }
-
-      // Set the explanation to the question
-      question.explanation = explanation;
-      console.log("Explanation", explanation);
-      console.log("Question", question);
-      await question.save();
-
-      // Set the user's latestExplanation to the explanation
-      user.latestExplanation = {
-        explanation: "",
-        saved: false,
-      };
-
-      await user.save();
-    }
-
-    // Set the user's latestExplanation to the explanation
-    if (user.latestExplanation) {
-      user.latestExplanation = {
-        explanation,
-        saved: false,
-      };
-      await user.save();
-    }
-  } catch (error) {
-    console.error(error);
   }
 });

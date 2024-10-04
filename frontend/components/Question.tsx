@@ -12,30 +12,37 @@ import { useAppSelector } from "@/store/types";
 import { Loader } from "@/components";
 import { motion } from "framer-motion";
 
+// Define the props interface for the Question component
 interface QuestionProps {
   question: QuestionType;
   questionNumber: number;
   currentTopic: string;
 }
 
+// Create a forwardRef component to allow ref forwarding
 const Question = forwardRef<HTMLDivElement, QuestionProps>(
   ({ question, questionNumber, currentTopic }, ref) => {
     const dispatch = useAppDispatch();
+    // State to manage the loading state of the explanation
     const [isExplanationLoading, setIsExplanationLoading] = useState(false);
 
+    // Filter and extract the choices from the question object
     const choices = Object.entries(question.choices).filter(
       ([key]) => !isNaN(Number(key))
     );
 
+    // Select the loading state for this specific question from the Redux store
     const loading = useAppSelector(
       (state) => state.questions.loading[question._id]
     );
 
+    // Effect to handle fetching and updating the explanation
     useEffect(() => {
       let explanationInterval: NodeJS.Timeout;
 
       if (question.selectedChoice && !question.explanation) {
         setIsExplanationLoading(true);
+        // Set up an interval to periodically check for the explanation
         explanationInterval = setInterval(() => {
           dispatch(fetchExplanation(question._id)).then((action) => {
             if (
@@ -51,6 +58,7 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
         setIsExplanationLoading(false);
       }
 
+      // Clean up the interval on component unmount
       return () => {
         if (explanationInterval) {
           clearInterval(explanationInterval);
@@ -58,9 +66,11 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
       };
     }, [question.selectedChoice, question.explanation, dispatch, question._id]);
 
+    // Handle the user selecting an answer
     function handleAnswerQuestion(selectedChoice: 1 | 2 | 3 | 4) {
       if (question.selectedChoice) return;
 
+      // Dispatch actions to update the state locally and on the server
       dispatch(
         answerClientSideQuestion({
           questionId: question._id,
@@ -80,6 +90,7 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
       setIsExplanationLoading(true);
     }
 
+    // Animation variants for the question component
     const questionVariants = {
       initial: { opacity: 0, y: 50 },
       animate: { opacity: 1, y: 0, transition: { duration: 0.5 } },
@@ -94,11 +105,13 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
         animate="animate"
         layout
       >
+        {/* Question header */}
         <div className="p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold">
             Question {questionNumber}: {question.question}
           </h3>
         </div>
+        {/* Answer choices */}
         <div className="p-4">
           {choices.map(([key, value]) => {
             const choiceKey = parseInt(key) as 1 | 2 | 3 | 4;
@@ -127,6 +140,7 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
             );
           })}
         </div>
+        {/* Explanation section */}
         {(isExplanationLoading || question.explanation) && (
           <div className="p-4 bg-gray-50 border-t border-gray-200">
             {isExplanationLoading && <Loader show={true} />}
@@ -140,6 +154,7 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
   }
 );
 
+// Set a display name for the component (useful for debugging)
 Question.displayName = "Question";
 
 export default Question;
