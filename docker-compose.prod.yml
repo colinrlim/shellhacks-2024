@@ -9,5 +9,5 @@ services:
     env_file:
       - ./frontend/.env.production
     restart: unless-stopped
-    mem_limit: 512m # Limit memory usage to 512MB
-    mem_reservation: 256m # Soft limit, container will try to stay around 256MB
+    mem_limit: 256m # Limit memory usage to 512MB
+    mem_reservation: 128m # Soft limit, container will try to stay around 256MB
