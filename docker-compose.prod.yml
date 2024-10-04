@@ -1,6 +1,4 @@
-
-# syntax=docker/dockerfile:1
-
+version: "3"
 services:
   app:
     build:
@@ -11,3 +9,5 @@ services:
     env_file:
       - ./frontend/.env.production
     restart: unless-stopped
+    mem_limit: 512m # Limit memory usage to 512MB
+    mem_reservation: 256m # Soft limit, container will try to stay around 256MB
