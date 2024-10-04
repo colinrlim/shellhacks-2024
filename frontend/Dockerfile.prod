@@ -1,5 +1,5 @@
-# Set an ARG to allow passing the app directory during build
-ARG APP_DIR=/app1
+ARG APP_DIR=/home/ec2-user/nextjs-apps/production/vail
+ARG PORT=3000
 
 # Production Dockerfile
 FROM node:20-alpine AS builder
@@ -36,7 +36,7 @@ COPY --from=builder $APP_DIR/.next ./.next
 COPY --from=builder $APP_DIR/public ./public
 
 # Expose port (can be modified for each instance if needed)
-EXPOSE 3000
+EXPOSE $PORT
 
 # Start the application
 CMD ["npm", "start"]
