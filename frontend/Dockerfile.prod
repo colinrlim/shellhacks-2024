@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Copy next.config.js (make sure this exists in your frontend folder)
-COPY next.config.js ./
+COPY next.config.mjs ./
 
 # Install dependencies
 RUN npm ci
@@ -29,7 +29,7 @@ WORKDIR /app
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/next.config.js ./
+COPY --from=builder /app/next.config.mjs ./
 # Ensure the config is copied
 
 # Install only production dependencies
