@@ -2,13 +2,13 @@
 
 services:
   app:
+    container_name: vail-frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
     volumes:
       - ./frontend:/app
       - /app/node_modules
-      - ./frontend/.env.local:/app/.env.local
     ports:
       - "3000:3000"
     environment:
