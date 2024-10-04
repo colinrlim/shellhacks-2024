@@ -12,9 +12,9 @@ WORKDIR /app
 COPY package*.json tsconfig.json ./
 
 # Install dependencies
-RUN npm ci --omit=dev
+RUN npm ci
 
-# Copy the rest of the application code
+# Copy the entire project
 COPY . .
 
 # Build the application
