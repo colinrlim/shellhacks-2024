@@ -24,11 +24,9 @@ function Learn() {
   const router = useRouter();
   const controls = useAnimationControls();
 
-  // Refs for managing scroll behavior
   const containerRef = useRef<HTMLDivElement>(null);
   const questionRefs = useRef<{ [key: string]: RefObject<HTMLDivElement> }>({});
 
-  // Local state
   const [mounted, setMounted] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [hoveredQuestionId, setHoveredQuestionId] = useState<string | null>(
@@ -50,70 +48,54 @@ function Learn() {
   );
   const allLoading = useAppSelector((state) => state.questions.loading);
 
-  // Check if any question is currently loading
-  const someLoading = Object.values(allLoading).some((value) => value === true);
-
-  // Set mounted state on component mount
-  useEffect(function handleMounting() {
-    setMounted(true);
-  }, []);
-
-  // Redirect to home if necessary data is missing
-  useEffect(
-    function handleRedirect() {
-      if (mounted && (!user || !currentTopic || !sessionId)) {
-        router.push("/");
-      }
-    },
-    [mounted, currentTopic, user, router, sessionId]
+  // Check if any question is currently loading its explanation
+  const someExplanationLoading = questions.some(
+    (q) => q.selectedChoice && !q.explanation
   );
 
-  // Start the learning session when conditions are met
-  useEffect(
-    function handleSessionStart() {
-      if (
-        mounted &&
-        user &&
-        currentTopic &&
-        questions.length === 0 &&
-        sessionId
-      ) {
-        dispatch(startSession({ topic: currentTopic, sessionId }));
-        controls.start("animate");
-      }
-    },
-    [
-      mounted,
-      user,
-      currentTopic,
-      questions.length,
-      dispatch,
-      sessionId,
-      controls,
-    ]
-  );
+  useEffect(() => setMounted(true), []);
 
-  // Fetch questions when the session is active
-  useEffect(
-    function handleGetQuestions() {
-      if (sessionActive && sessionId && currentTopic) {
-        dispatch(getQuestions({ topic: currentTopic, sessionId }));
-      }
-    },
-    [sessionActive, sessionId, currentTopic, dispatch]
-  );
+  useEffect(() => {
+    if (mounted && (!user || !currentTopic || !sessionId)) {
+      router.push("/");
+    }
+  }, [mounted, currentTopic, user, router, sessionId]);
 
-  // Handle scrolling to the last answered question
+  useEffect(() => {
+    if (
+      mounted &&
+      user &&
+      currentTopic &&
+      questions.length === 0 &&
+      sessionId
+    ) {
+      dispatch(startSession({ topic: currentTopic, sessionId }));
+      controls.start("animate");
+    }
+  }, [
+    mounted,
+    user,
+    currentTopic,
+    questions.length,
+    dispatch,
+    sessionId,
+    controls,
+  ]);
+
+  useEffect(() => {
+    if (sessionActive && sessionId && currentTopic) {
+      dispatch(getQuestions({ topic: currentTopic, sessionId }));
+    }
+  }, [sessionActive, sessionId, currentTopic, dispatch]);
+
   useEffect(() => {
     if (containerRef.current && questions.length > 0) {
       const lastAnsweredQuestionIndex =
         questions.findIndex((q) => q.selectedChoice === undefined) - 1;
-
       if (lastAnsweredQuestionIndex >= 0) {
         const lastAnsweredQuestionId = questions[lastAnsweredQuestionIndex]._id;
         const lastAnsweredQuestionElement =
           questionRefs.current[lastAnsweredQuestionId]?.current;
-
         if (lastAnsweredQuestionElement) {
           lastAnsweredQuestionElement.scrollIntoView({
             behavior: "smooth",
@@ -124,10 +106,32 @@ function Learn() {
     }
   }, [questions]);
 
-  // Handle question hover for tooltip display
   function handleQuestionHover(isHovering: boolean, questionId: string) {
-    setShowTooltip(isHovering && someLoading);
-    setHoveredQuestionId(isHovering ? questionId : null);
+    const question = questions.find((q) => q._id.toString() === questionId);
+    if (question) {
+      setShowTooltip(
+        (isHovering && (allLoading[questionId] || someExplanationLoading)) ||
+          false
+      );
+      setHoveredQuestionId(isHovering ? questionId : null);
+    }
+  }
+
+  function getTooltipContent() {
+    if (!hoveredQuestionId) return "";
+    const question = questions.find(
+      (q) => q._id.toString() === hoveredQuestionId
+    );
+    if (!question) return "";
+
+    if (allLoading[hoveredQuestionId]) {
+      return "This question is loading. Please wait.";
+    } else if (question.selectedChoice && !question.explanation) {
+      return "Explanation is loading. Please wait.";
+    } else if (someExplanationLoading) {
+      return "Please wait for all explanations to load.";
+    }
+    return "";
   }
 
   // Animation variants
@@ -254,6 +258,7 @@ function Learn() {
                       question={question}
                       questionNumber={index + 1}
                       currentTopic={currentTopic}
+                      isAnyQuestionLoading={someExplanationLoading}
                     />
                   </motion.div>
                 );
@@ -264,11 +269,7 @@ function Learn() {
       </motion.div>
 
       {/* Tooltip for loading states */}
-      <GlassTooltip show={showTooltip}>
-        {hoveredQuestionId && allLoading[hoveredQuestionId]
-          ? "This question is loading. Please wait."
-          : "Please wait for the explanation to load."}
-      </GlassTooltip>
+      <GlassTooltip show={showTooltip}>{getTooltipContent()}</GlassTooltip>
     </motion.div>
   );
 }

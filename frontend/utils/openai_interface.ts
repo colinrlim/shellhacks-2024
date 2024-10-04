@@ -1,7 +1,15 @@
 import OpenAI from "openai";
+import Logger from "./logger";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const { OPENAI_MODEL } = process.env;
+
+Logger.info(
+  `OpenAI Interface initialized with model ${OPENAI_MODEL}, key ${process.env.OPENAI_API_KEY?.substring(
+    0,
+    8
+  ).padEnd(process.env.OPENAI_API_KEY.length, "*")}`
+);
 
 // Function types
 type OnAnswerReceiveProcessedDataType = (
@@ -37,6 +45,11 @@ type OnExplanationReceiveDataType = (
   session_id: string,
   explanation: string
 ) => void;
+type OnSetCurrentTopicDataType = (
+  uid: string,
+  session_id: string,
+  topic_name: string
+) => void;
 type SendMetadataFromDatabasesType = (
   uid: string,
   session_id: string
@@ -52,6 +65,7 @@ const functions = {
   onRegisterRelationshipReceiveData:
     (() => {}) as OnRegisterRelationshipReceiveDataType,
   onExplanationReceiveData: (() => {}) as OnExplanationReceiveDataType,
+  onSetCurrentTopicReceiveData: (() => {}) as OnSetCurrentTopicDataType,
   sendMetadataFromDatabases: ((
     uid: string,
     session_id: string
@@ -92,6 +106,11 @@ export const setOnExplanationReceiveData = (
 ) => {
   functions.onExplanationReceiveData = fn;
 };
+export const setOnSetCurrentTopicReceiveData = (
+  fn: OnSetCurrentTopicDataType
+) => {
+  functions.onSetCurrentTopicReceiveData = fn;
+};
 export const setSendMetadataFromDatabases = (
   fn: SendMetadataFromDatabasesType
 ) => {
@@ -113,7 +132,7 @@ async function INPUT_start_session(
   uid: string,
   session_id: string,
   query: string
-): Promise<void> {
+) {
   const messages = [
     { role: "assistant", content: "What would you like to learn?" },
     { role: "user", content: query },
@@ -168,7 +187,7 @@ async function INPUT_answer(
   ];
 
   functions.onAnswerReceiveProcessedData(uid, session_id, current_response);
-  await _send(uid, session_id, messages);
+  _send(uid, session_id, messages);
 }
 async function INPUT_favorite(
   uid: string,
@@ -275,11 +294,7 @@ type _FunctionCallUnparsed_Bot = {
   };
 };
 
-async function _send(
-  uid: string,
-  session_id: string,
-  messages: any
-): Promise<void> {
+async function _send(uid: string, session_id: string, messages: any) {
   // DONE
   const MESSAGES_HEADER = [
     {
@@ -309,7 +324,7 @@ async function _send(
 
   while (!sufficient && (result == undefined || result == null)) {
     let completion = await openai.chat.completions.create({
-      model: OPENAI_MODEL || "gpt-4o-mini",
+      model: "gpt-4o-mini",
       messages: messages,
       tools: ALL_TOOLS.filter(
         (func) => !used_functions.includes(func.function.name)
@@ -321,7 +336,7 @@ async function _send(
     // console.log(result);
 
     if (result) {
-      await _do_calls(uid, session_id, result);
+      _do_calls(uid, session_id, result);
 
       // Add used function names to the used_functions array
       result.forEach((call) => {
@@ -373,7 +388,7 @@ async function _do_calls(
     if (function_call.name == "create_multiple_choice_question") {
       // Create question DONE
       let new_question: Question_T = function_call.arguments;
-      await functions.onQuestionCreateReceiveData(
+      functions.onQuestionCreateReceiveData(
         uid,
         session_id,
         _deep_copy(new_question)
@@ -383,13 +398,6 @@ async function _do_calls(
       //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.name), false);
       await _generate_metadata(uid, session_id);
 
-      await functions.onRegisterTopicReceiveData(
-        uid,
-        session_id,
-        function_call.arguments.name,
-        function_call.arguments.description
-      );
-
       if (function_call.arguments.hasOwnProperty("prerequisite_topics")) {
         // add established topic as child topic of all of these
         for (
@@ -398,13 +406,14 @@ async function _do_calls(
           i++
         ) {
           let curr_topic = function_call.arguments.prerequisite_topics[i];
-          await functions.onRegisterTopicReceiveData(
+
+          functions.onRegisterTopicReceiveData(
             uid,
             session_id,
             curr_topic.name,
             curr_topic.description
           );
-          await functions.onRegisterRelationshipReceiveData(
+          functions.onRegisterRelationshipReceiveData(
             uid,
             session_id,
             curr_topic.name,
@@ -417,13 +426,14 @@ async function _do_calls(
         // add all of these as child topics of established topic
         for (let i = 0; i < function_call.arguments.child_topics.length; i++) {
           let curr_topic = function_call.arguments.child_topics[i];
-          await functions.onRegisterTopicReceiveData(
+
+          functions.onRegisterTopicReceiveData(
             uid,
             session_id,
             function_call.arguments.name,
             function_call.arguments.description
           );
-          await functions.onRegisterRelationshipReceiveData(
+          functions.onRegisterRelationshipReceiveData(
             uid,
             session_id,
             function_call.arguments.name,
@@ -433,10 +443,11 @@ async function _do_calls(
         }
       }
 
-      _generate_metadata(uid, session_id).then((metadata) => {
-        console.log(metadata);
-        metadata.current_topic = function_call.arguments.name;
-      });
+      functions.onSetCurrentTopicReceiveData(
+        uid,
+        session_id,
+        function_call.arguments.name
+      );
     } else if (function_call.name == "establish_relationship") {
       // Register node relationship DONE
       //assert.strictEqual(metadata.registered_topics.value.hasOwnProperty(function_call.arguments.prerequisite_topic ), true);
@@ -456,7 +467,6 @@ async function _do_calls(
         function_call.arguments.strength
       );
     } else if (function_call.name == "explain_question") {
-      console.log("explanation called");
       functions.onExplanationReceiveData(
         uid,
         session_id,

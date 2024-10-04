@@ -6,6 +6,7 @@ import {
   setOnRegisterRelationshipReceiveData,
   setOnRegisterTopicReceiveData,
   setSendMetadataFromDatabases,
+  setOnSetCurrentTopicReceiveData,
   Topic_T,
   Metadata_T,
   QuestionResponse_T,
@@ -98,6 +99,29 @@ setOnRegisterTopicReceiveData(
     }
   }
 );
+
+setOnSetCurrentTopicReceiveData(async (uid, session_id, topic_name) => {
+  try {
+    await dbConnect();
+    Logger.info(
+      `Setting current topic to "${topic_name}" for user ${uid}, session ${session_id}`
+    );
+
+    const user = await User.findOne({ auth0Id: uid });
+    if (!user) {
+      Logger.error(`User not found: ${uid}`);
+      return;
+    }
+
+    user.currentTopic = topic_name;
+
+    await user.save();
+
+    Logger.debug(`Current topic set successfully for user ${uid}`);
+  } catch (error) {
+    Logger.error(`Error setting current topic for user ${uid}: ${error}`);
+  }
+});
 
 setOnRegisterRelationshipReceiveData(
   async (uid, session_id, topic_name, child_topic, strength) => {
