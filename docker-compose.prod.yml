@@ -1,4 +1,5 @@
-version: "3.8"
+
+# syntax=docker/dockerfile:1
 
 services:
   app:
