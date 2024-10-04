@@ -9,6 +9,8 @@ import Topic from "@/models/Topic";
 import { INPUT_start_session } from "@/utils/openai_interface";
 import { Question } from "@/models";
 import "@/utils/openai_handlers";
+import AdminUser from "@/models/AdminUser";
+import { RiCreativeCommonsZeroLine } from "react-icons/ri";
 
 // Function Overrides
 
@@ -45,6 +47,25 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
     // Set the current topic for the user
     user.currentTopic = topic;
     await user.save();
+
+    // Check if the user is an administrative user
+    // ! Redo this once real rate limits are in place
+    const adminUser = await AdminUser.findOne({ accountId: user._id });
+    if (!adminUser || adminUser?.role !== "admin") {
+      // Find the amount of questions the user has
+      const questionCount = await Question.countDocuments({
+        createdBy: auth0Id,
+      });
+
+      const maxQuestionsAllows = adminUser?.overrideMaxQuestions || 50;
+
+      // If the user has more than 50 questions, return an error
+      if (questionCount >= maxQuestionsAllows) {
+        return res.status(403).json({
+          message: `You have reached the maximum question limit  at this time. Please contact an administrator for further assistance. Max questions allowed for this account: ${maxQuestionsAllows}`,
+        });
+      }
+    }
 
     // Begin the session
     await INPUT_start_session(auth0Id, sessionId, topic);
