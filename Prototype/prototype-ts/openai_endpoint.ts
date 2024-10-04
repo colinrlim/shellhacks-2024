@@ -42,7 +42,7 @@ type OnExplanationReceiveDataType = (
 type OnSetCurrentTopicDataType = (
   uid: string,
   session_id: string,
-  explanation: string
+  topic: string
 ) => void;
 type SendMetadataFromDatabasesType = (
   uid: string,
