@@ -194,8 +194,7 @@ function Learn() {
             >
               <div className="flex justify-between items-start">
                 <p className="text-sm">
-                  You can reset your topic by hovering over your name and
-                  selecting reset.
+                  You can reset your topic by clicking your profile below.
                 </p>
                 <button
                   className="ml-4 text-blue-700 hover:text-blue-900 focus:outline-none"
