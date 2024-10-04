@@ -26,7 +26,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   reactStrictMode: true,
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     if (!isServer) {
       config.node = {
         fs: "empty",
