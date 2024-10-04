@@ -15,13 +15,14 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   reactStrictMode: true,
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-      };
-    }
+  webpack: (config) => {
+    config.resolve.fallback = {
+      // if you miss it, all the other options in fallback, specified
+      // by next.js will be dropped.
+      ...config.resolve.fallback,
+
+      fs: false, // the solution
+    };
 
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -36,7 +37,6 @@ const nextConfig = {
       "@/store": "/app/store",
       "@/types": "/app/types",
     };
-
     return config;
   },
 };
