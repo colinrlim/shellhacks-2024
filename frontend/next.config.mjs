@@ -27,6 +27,12 @@ const nextConfig = {
   },
   reactStrictMode: true,
   webpack: (config) => {
+    if (!isServer) {
+      config.node = {
+        fs: "empty",
+      };
+    }
+
     config.resolve.alias = {
       ...config.resolve.alias,
       "@/components": "/app/components",
