@@ -28,7 +28,7 @@ function Dashboard() {
     dispatch(resetSession());
     dispatch(setQuestions([]));
     dispatch(setCurrentTopic(input));
-    router.push("/learn/dashboard/learn");
+    router.push("/dashboard/learn");
   };
 
   // Animation variants for the container
