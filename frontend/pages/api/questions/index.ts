@@ -20,7 +20,6 @@ async function GetQuestion(req: NextApiRequest, res: NextApiResponse) {
   const sessionId = params.get("sessionId");
 
   try {
-    console.log("going to get the question now!");
     // Connect to Database
     await dbConnect();
 

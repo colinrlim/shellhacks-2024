@@ -7,7 +7,8 @@
 // Imports
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-import { setQuestions } from "./questionsSlice"; // Adjust the path as necessary
+import { setQuestions } from "./questionsSlice";
+import Logger from "@/utils/logger";
 
 // Topic interface
 interface Topic {
@@ -51,14 +52,14 @@ export const startSession = createAsyncThunk(
   async (payload: StartSessionPayloadProps, { dispatch, rejectWithValue }) => {
     const { topic, sessionId } = payload;
     try {
+      Logger.info(`Starting session for topic: ${topic}`);
       // Send PUT request to start the session
       const response = await axios.put("/api/questions/startSession", {
         topic,
         sessionId,
       });
       const { data } = response;
-      console.log(data);
-
+      Logger.debug(`Session start response: ${JSON.stringify(data)}`);
       // Set the current topic
       dispatch(setCurrentTopic(topic));
 
@@ -71,9 +72,11 @@ export const startSession = createAsyncThunk(
       return data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
-        console.log(error);
+        Logger.error(`Error starting session: ${error}`);
         return rejectWithValue(error.response?.data?.message || error.message);
       }
+      Logger.error(`Error starting session: ${error}`);
+      return rejectWithValue("An unexpected error occurred");
     }
   }
 );
@@ -86,7 +89,6 @@ export const getQuestions = createAsyncThunk(
       // Send PUT request to start the session
       const response = await axios.get(`/api/questions?sessionId=${sessionId}`);
       const { data } = response;
-      console.log(data);
 
       // If questions were updated, dispatch setQuestions
       if (data.updateFlags.questions) {
