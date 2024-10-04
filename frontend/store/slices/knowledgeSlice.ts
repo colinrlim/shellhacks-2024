@@ -54,7 +54,7 @@ export const startSession = createAsyncThunk(
     try {
       Logger.info(`Starting session for topic: ${topic}`);
       // Send PUT request to start the session
-      const response = await axios.put("/api/questions/startSession", {
+      const response = await axios.put("/learn/api/questions/startSession", {
         topic,
         sessionId,
       });
@@ -87,7 +87,7 @@ export const getQuestions = createAsyncThunk(
     const { sessionId } = payload;
     try {
       // Send PUT request to start the session
-      const response = await axios.get(`/api/questions?sessionId=${sessionId}`);
+      const response = await axios.get(`/learn/api/questions?sessionId=${sessionId}`);
       const { data } = response;
 
       // If questions were updated, dispatch setQuestions

@@ -11,7 +11,10 @@ import { AnimatePresence } from "framer-motion";
 function MyApp({ Component, pageProps, router }: AppProps) {
   return (
     <Provider store={store}>
-      <UserProvider>
+      <UserProvider
+        loginUrl="/learn/api/auth/login"
+        profileUrl="/learn/api/auth/me"
+      >
         <AnimatePresence mode="wait" initial={true}>
           <Component {...pageProps} key={router.route} />
         </AnimatePresence>

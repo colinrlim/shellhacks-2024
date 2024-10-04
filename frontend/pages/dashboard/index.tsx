@@ -1,5 +1,5 @@
-import { withPageAuthRequired } from "@auth0/nextjs-auth0";
-import { useState } from "react";
+import { withPageAuthRequired, getSession } from "@auth0/nextjs-auth0";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAppDispatch } from "@/store";
 import { setCurrentTopic, resetSession } from "@/store/slices/knowledgeSlice";
@@ -28,7 +28,7 @@ function Dashboard() {
     dispatch(resetSession());
     dispatch(setQuestions([]));
     dispatch(setCurrentTopic(input));
-    router.push("/dashboard/learn");
+    router.push("/learn/dashboard/learn");
   };
 
   // Animation variants for the container
@@ -66,6 +66,10 @@ function Dashboard() {
       transition: { duration: 0.3, ease: "easeIn" },
     },
   };
+
+  if (!user) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <motion.div
@@ -125,4 +129,6 @@ function Dashboard() {
 // Wrap the Dashboard component with authentication protection
 export default withProtected(Dashboard);
 
-export const getServerSideProps = withPageAuthRequired();
+export const getServerSideProps = withPageAuthRequired({
+  returnTo: "/learn/dashboard",
+});

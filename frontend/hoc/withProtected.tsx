@@ -22,7 +22,7 @@ const withProtected = <P extends object>(
     // Sets user state information if user is authenticated
     useEffect(() => {
       if (!isLoading && !user) {
-        router.push("/api/auth/login");
+        router.push("api/auth/login");
       } else {
         if (user && user.sub) {
           dispatch(

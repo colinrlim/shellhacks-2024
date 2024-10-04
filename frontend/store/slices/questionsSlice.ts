@@ -28,7 +28,7 @@ export const answerQuestion = createAsyncThunk(
         `Answering question ${questionId} with choice ${selectedChoice} for topic "${currentTopic}"`
       );
 
-      const response = await axios.post("/api/questions/answer", {
+      const response = await axios.post("/learn/api/questions/answer", {
         questionId,
         selectedChoice,
         currentTopic,
