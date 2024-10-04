@@ -76,7 +76,7 @@ export const fetchExplanation = createAsyncThunk(
     try {
       Logger.info(`Fetching explanation for question ${questionId}`);
       const response = await axios.get(
-        `/api/questions/${questionId}/explanation`
+        `/learn/api/questions/${questionId}/explanation`
       );
       Logger.debug(
         `Explanation response for question ${questionId}:`,
