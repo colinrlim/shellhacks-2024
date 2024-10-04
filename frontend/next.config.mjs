@@ -9,17 +9,6 @@ const nextConfig = {
       },
     ];
   },
-  webpack(config) {
-    config.resolve.fallback = {
-      // if you miss it, all the other options in fallback, specified
-      // by next.js will be dropped.
-      ...config.resolve.fallback,
-
-      fs: false, // the solution
-    };
-
-    return config;
-  },
   eslint: {
     // Warning: This allows production builds to successfully complete even if
     // your project has ESLint errors.
@@ -28,8 +17,9 @@ const nextConfig = {
   reactStrictMode: true,
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.node = {
-        fs: "empty",
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
       };
     }
 
@@ -46,6 +36,7 @@ const nextConfig = {
       "@/store": "/app/store",
       "@/types": "/app/types",
     };
+
     return config;
   },
 };
