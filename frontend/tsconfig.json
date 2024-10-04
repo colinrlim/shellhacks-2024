@@ -18,7 +18,16 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/components/*": ["./components/*"],
+      "@/constants/*": ["./constants/*"],
+      "@/hooks/*": ["./hooks/*"],
+      "@/hoc/*": ["./hoc/*"],
+      "@/models/*": ["./models/*"],
+      "@/pages/*": ["./pages/*"],
+      "@/utils/*": ["./utils/*"],
+      "@/app/*": ["./app/*"],
+      "@/store/*": ["./store/*"],
+      "@/types/*": ["./types/*"]
     }
   },
   "include": [
