@@ -1,20 +1,19 @@
-# Build-time arguments
-ARG APP_DIR=/nextjs-apps/vail
-ARG PORT=3000
-
-# Builder Stage
+# Build Stage
 FROM node:20-alpine AS builder
 
-# Set working directory for building the application
+# Set working directory
 WORKDIR /app
 
 # Copy package.json and package-lock.json
-COPY package*.json tsconfig.json ./
+COPY package*.json ./
+
+# Copy next.config.js (make sure this exists in your frontend folder)
+COPY next.config.js ./
 
 # Install dependencies
 RUN npm ci
 
-# Copy the entire project
+# Copy the rest of the application code
 COPY . .
 
 # Build the application
@@ -23,23 +22,21 @@ RUN npm run build
 # Production Stage
 FROM node:20-alpine
 
-# Set runtime environment variable for the port
-ENV PORT=$PORT
-
 # Set working directory for running the application
-WORKDIR $APP_DIR
+WORKDIR /app
 
-# Copy only necessary production files from builder stage
+# Copy built application from builder stage
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/next.config.js ./
+# Ensure the config is copied
 
 # Install only production dependencies
 RUN npm ci --omit=dev
 
-# Expose the port (used by the application)
-EXPOSE $PORT
+# Expose port
+EXPOSE 3000
 
 # Start the application
 CMD ["npm", "start"]
