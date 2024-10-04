@@ -1,17 +1,18 @@
-ARG APP_DIR=/home/ec2-user/nextjs-apps/production/vail
+# Build-time arguments
+ARG APP_DIR=/nextjs-apps/vail
 ARG PORT=3000
 
-# Production Dockerfile
+# Builder Stage
 FROM node:20-alpine AS builder
 
 # Set working directory for building the application
-WORKDIR $APP_DIR
+WORKDIR /app
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --omit=dev
 
 # Copy the rest of the application code
 COPY . .
@@ -19,23 +20,24 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Production image
+# Production Stage
 FROM node:20-alpine
+
+# Set runtime environment variable for the port
+ENV PORT=$PORT
 
 # Set working directory for running the application
 WORKDIR $APP_DIR
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Copy only necessary production files from builder stage
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package*.json ./
 
 # Install only production dependencies
 RUN npm ci --omit=dev
 
-# Copy built application from builder stage
-COPY --from=builder $APP_DIR/.next ./.next
-COPY --from=builder $APP_DIR/public ./public
-
-# Expose port (can be modified for each instance if needed)
+# Expose the port (used by the application)
 EXPOSE $PORT
 
 # Start the application
