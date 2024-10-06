@@ -5,11 +5,9 @@ import Link from "next/link";
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
 import { clearUser } from "@/store/slices/userSlice";
-import { closeProfileModal, openProfileModal } from "@/store/slices/uiSlice";
-import ProfileModal from "./ProfileModal";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, LogOut, RefreshCcw, Cog } from "lucide-react";
+import { LogOut, RefreshCcw, Cog } from "lucide-react";
 
 function ProfilePopover() {
   const dispatch = useAppDispatch();
@@ -24,20 +22,6 @@ function ProfilePopover() {
 
   // Local state to manage popover open/closed state
   const [isOpen, setIsOpen] = useState(false);
-
-  // Get profile modal open state from Redux store
-  const isProfileModalOpen = useAppSelector(
-    (state) => state.ui.isProfileModalOpen
-  );
-
-  // Toggle profile modal
-  const toggleProfileModal = () => {
-    if (isProfileModalOpen) dispatch(closeProfileModal());
-    else {
-      setIsOpen(false);
-      dispatch(openProfileModal());
-    }
-  };
 
   // Toggle popover open/closed state
   const toggleOpen = () => setIsOpen(!isOpen);
@@ -109,17 +93,6 @@ function ProfilePopover() {
             exit="closed"
             className="px-2 pb-2"
           >
-            {/* Profile button */}
-            <button
-              className="w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
-              onClick={() => {
-                toggleProfileModal();
-                closePopover();
-              }}
-            >
-              <User size={16} className="mr-2" />
-              Profile
-            </button>
             {/* Reset Topic button (only shown when not on dashboard) */}
             {pathname !== "/dashboard" && (
               <button
@@ -144,7 +117,7 @@ function ProfilePopover() {
             {/* Logout button */}
             <Link
               href="/api/auth/logout"
-              className="block w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
+              className="w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
               onClick={closePopover}
             >
               <LogOut size={16} className="mr-2" />
@@ -153,9 +126,6 @@ function ProfilePopover() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Profile Modal component */}
-      <ProfileModal isOpen={isProfileModalOpen} onClose={toggleProfileModal} />
     </motion.div>
   );
 }
