@@ -1,3 +1,4 @@
+import Logger from "@/utils/logger";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 
@@ -54,10 +55,20 @@ export const fetchSettings = createAsyncThunk(
   "settings/fetchSettings",
   async (userId: string, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`/api/settings/${userId}`);
+      Logger.info(`Fetching settings for user ${userId}`);
+      const response = await axios.get(`/learn/api/settings/${userId}`);
+      Logger.debug(`Settings response for user ${userId}:`, response.data);
       return response.data;
-    } catch (error) {
-      return rejectWithValue("Failed to fetch settings");
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        Logger.error(
+          `Error fetching settings for user ${userId}:`,
+          error.response?.data?.message || error.message
+        );
+        return rejectWithValue(error.response?.data?.message || error.message);
+      }
+      Logger.error(`Error fetching settings for user ${userId}:`, error);
+      return rejectWithValue("An unexpected error occurred");
     }
   }
 );
@@ -69,10 +80,23 @@ export const updateSettings = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await axios.put(`/api/settings/${userId}`, settings);
+      Logger.info(`Updating settings for user ${userId}`);
+      const response = await axios.put(
+        `/learn/api/settings/${userId}`,
+        settings
+      );
+      Logger.debug(`Settings updated for user ${userId}:`, response.data);
       return response.data;
-    } catch (error) {
-      return rejectWithValue("Failed to update settings");
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        Logger.error(
+          `Error updating settings for user ${userId}:`,
+          error.response?.data?.message || error.message
+        );
+        return rejectWithValue(error.response?.data?.message || error.message);
+      }
+      Logger.error(`Error updating settings for user ${userId}:`, error);
+      return rejectWithValue("An unexpected error occurred");
     }
   }
 );
@@ -93,7 +117,8 @@ const settingsSlice = createSlice({
         fetchSettings.fulfilled,
         (state, action: PayloadAction<SettingsState>) => {
           state.loading = false;
-          return { ...state, ...action.payload };
+          state.error = null;
+          Object.assign(state, action.payload);
         }
       )
       .addCase(fetchSettings.rejected, (state, action) => {
@@ -108,7 +133,8 @@ const settingsSlice = createSlice({
         updateSettings.fulfilled,
         (state, action: PayloadAction<SettingsState>) => {
           state.loading = false;
-          return { ...state, ...action.payload };
+          state.error = null;
+          Object.assign(state, action.payload);
         }
       )
       .addCase(updateSettings.rejected, (state, action) => {

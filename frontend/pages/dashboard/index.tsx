@@ -1,5 +1,5 @@
-import { withPageAuthRequired, getSession } from "@auth0/nextjs-auth0";
-import { useState, useEffect } from "react";
+import { withPageAuthRequired } from "@auth0/nextjs-auth0";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import { useAppDispatch } from "@/store";
 import { setCurrentTopic, resetSession } from "@/store/slices/knowledgeSlice";

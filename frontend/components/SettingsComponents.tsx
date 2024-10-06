@@ -6,17 +6,27 @@ import {
   ListboxButton,
   ListboxOptions,
   ListboxOption,
+  Label,
+  Field,
 } from "@headlessui/react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import Portal from "./Portal";
 
-export const ToggleSwitch = ({ enabled, setEnabled, label }) => {
+interface ToggleSwitchProps {
+  enabled: boolean;
+  setEnabled: (enabled: boolean) => void;
+  label: string;
+}
+
+export const ToggleSwitch = ({
+  enabled,
+  setEnabled,
+  label,
+}: ToggleSwitchProps) => {
   return (
-    <Switch.Group>
+    <Field>
       <div className="flex items-center justify-between">
-        <Switch.Label className="mr-4 text-sm text-gray-700">
-          {label}
-        </Switch.Label>
+        <Label className="mr-4 text-sm text-gray-700">{label}</Label>
         <Switch
           checked={enabled}
           onChange={setEnabled}
@@ -31,11 +41,29 @@ export const ToggleSwitch = ({ enabled, setEnabled, label }) => {
           />
         </Switch>
       </div>
-    </Switch.Group>
+    </Field>
   );
 };
 
-export const SelectMenu = ({ value, onChange, options, label }) => {
+interface SelectMenuProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}
+
+// Helper function to convert a string to proper case
+const toProperCase = (str: string) => {
+  return str.replace(
+    /\w\S*/g,
+    (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+  );
+};
+
+export const SelectMenu: React.FC<SelectMenuProps> = ({
+  value,
+  onChange,
+  options,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [buttonPosition, setButtonPosition] = useState({
@@ -55,7 +83,7 @@ export const SelectMenu = ({ value, onChange, options, label }) => {
     }
   }, [isOpen]);
 
-  const handleChange = (selectedValue) => {
+  const handleChange = (selectedValue: string) => {
     onChange(selectedValue);
     setIsOpen(false);
   };
@@ -68,7 +96,7 @@ export const SelectMenu = ({ value, onChange, options, label }) => {
           className="relative w-full cursor-default rounded-md bg-gray-300 py-2 pl-3 pr-10 text-left border border-gray-500 focus:outline-none focus-visible:border-gray-800 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-300 sm:text-sm"
           onClick={() => setIsOpen(!isOpen)}
         >
-          <span className="block truncate">{value}</span>
+          <span className="block truncate">{toProperCase(value)}</span>
           <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
             <ChevronsUpDown
               className="h-5 w-5 text-gray-400"
@@ -85,7 +113,7 @@ export const SelectMenu = ({ value, onChange, options, label }) => {
             leaveTo="opacity-0"
           >
             <ListboxOptions
-              className="absolute z-50 mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+              className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
               style={{
                 top: `${buttonPosition.top}px`,
                 left: `${buttonPosition.left}px`,
@@ -95,11 +123,7 @@ export const SelectMenu = ({ value, onChange, options, label }) => {
               {options.map((option, optionIdx) => (
                 <ListboxOption
                   key={optionIdx}
-                  className={({ active }) =>
-                    `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                      active ? "bg-indigo-100 text-indigo-900" : "text-gray-900"
-                    }`
-                  }
+                  className={`relative cursor-default select-none py-2 pl-10 pr-4 active:bg-indigo-100 active:text-indigo-900 text-gray-900`}
                   value={option}
                 >
                   {({ selected }) => (
@@ -109,7 +133,7 @@ export const SelectMenu = ({ value, onChange, options, label }) => {
                           selected ? "font-medium" : "font-normal"
                         }`}
                       >
-                        {option}
+                        {toProperCase(option)}
                       </span>
                       {selected ? (
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600">

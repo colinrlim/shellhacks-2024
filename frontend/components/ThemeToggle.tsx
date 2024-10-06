@@ -1,11 +1,13 @@
 import React, { useEffect } from "react";
-import { useAppSelector, useAppDispatch } from "@/store/types";
+import { useAppSelector } from "@/store/types";
+import { useAppDispatch } from "@/store";
 import { updateSettings } from "@/store/slices/settingsSlice";
 import { Moon, Sun } from "lucide-react";
 
 const ThemeToggle: React.FC = () => {
   const dispatch = useAppDispatch();
   const theme = useAppSelector((state) => state.settings.interface.theme);
+  const userInterface = useAppSelector((state) => state.settings.interface);
   const user = useAppSelector((state) => state.user.userInfo);
 
   useEffect(() => {
@@ -18,10 +20,11 @@ const ThemeToggle: React.FC = () => {
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
+    if (!user || !user.auth0Id) return;
     dispatch(
       updateSettings({
         userId: user?.auth0Id,
-        settings: { interface: { theme: newTheme } },
+        settings: { interface: { ...userInterface, theme: newTheme } },
       })
     );
   };

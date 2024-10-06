@@ -32,31 +32,40 @@ const SettingsSchema = new mongoose.Schema<ISettings>({
     required: true,
   },
   account: {
-    name: { type: String },
+    name: { type: String, default: "Learning User" },
     email: { type: String, required: true },
   },
   security: {
-    twoFactorEnabled: { type: Boolean, required: true },
+    twoFactorEnabled: { type: Boolean, default: false },
     emailVerificationCode: { type: String },
     emailVerified: { type: Boolean },
     passwordResetConfirmationCode: { type: String },
   },
   interface: {
-    theme: { type: String, enum: ["light", "dark"], required: true },
+    theme: {
+      type: String,
+      enum: ["light", "dark"],
+      default: "light",
+    },
     fontSize: {
       type: String,
       enum: ["small", "medium", "large"],
-      required: true,
+      default: "medium",
     },
-    language: { type: String, enum: ["en"], required: true },
+    language: { type: String, enum: ["en"], default: "en" },
   },
   data: {
-    dataExportRequested: { type: Boolean, required: true },
+    dataExportRequested: { type: Boolean, default: false },
   },
   legal: {
-    marketingConsent: { type: Boolean, required: true },
+    marketingConsent: { type: Boolean, default: false },
   },
 });
+
+// Model Cache Management
+if (mongoose.models.Question) {
+  delete mongoose.models.Question;
+}
 
 const Settings: Model<ISettings> =
   mongoose.models.Settings ||
