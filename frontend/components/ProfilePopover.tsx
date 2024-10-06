@@ -1,19 +1,21 @@
 // @/components/profilePopover
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
 import { clearUser } from "@/store/slices/userSlice";
 import { closeProfileModal, openProfileModal } from "@/store/slices/uiSlice";
 import ProfileModal from "./ProfileModal";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, LogOut, RefreshCcw } from "lucide-react";
+import { User, LogOut, RefreshCcw, Cog } from "lucide-react";
 
 function ProfilePopover() {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
+  const router = useRouter();
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   // Get user info from Redux store
   const user = useAppSelector((state) => state.user.userInfo);
@@ -40,6 +42,32 @@ function ProfilePopover() {
   // Toggle popover open/closed state
   const toggleOpen = () => setIsOpen(!isOpen);
 
+  // Close popover
+  const closePopover = () => setIsOpen(false);
+
+  // Handle navigation and close popover
+  const handleNavigation = (path: string) => {
+    closePopover();
+    router.push(path);
+  };
+
+  // Click outside listener
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target as Node)
+      ) {
+        closePopover();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   // Animation variants for the container
   const containerVariants = {
     closed: { width: "auto", height: "40px" },
@@ -54,6 +82,7 @@ function ProfilePopover() {
 
   return (
     <motion.div
+      ref={popoverRef}
       className="fixed bottom-4 left-4 z-50 bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200"
       initial="closed"
       animate={isOpen ? "open" : "closed"}
@@ -83,25 +112,40 @@ function ProfilePopover() {
             {/* Profile button */}
             <button
               className="w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
-              onClick={toggleProfileModal}
+              onClick={() => {
+                toggleProfileModal();
+                closePopover();
+              }}
             >
               <User size={16} className="mr-2" />
               Profile
             </button>
             {/* Reset Topic button (only shown when not on dashboard) */}
             {pathname !== "/dashboard" && (
-              <Link
-                href="/dashboard"
-                className="block w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
+              <button
+                onClick={() => handleNavigation("/dashboard")}
+                className="w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
               >
                 <RefreshCcw size={16} className="mr-2" />
-                Reset Topic
-              </Link>
+                {pathname === "/topics"
+                  ? "Return to Dashboard"
+                  : "Start New Session"}
+              </button>
+            )}
+            {pathname !== "/settings" && (
+              <button
+                onClick={() => handleNavigation("/settings")}
+                className="w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
+              >
+                <Cog size={16} className="mr-2" />
+                Settings
+              </button>
             )}
             {/* Logout button */}
             <Link
               href="/api/auth/logout"
               className="block w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
+              onClick={closePopover}
             >
               <LogOut size={16} className="mr-2" />
               Logout
