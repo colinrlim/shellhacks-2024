@@ -76,7 +76,7 @@ const Settings = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.25 }}
           >
             <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
             <div className="space-y-6">
@@ -102,7 +102,7 @@ const Settings = () => {
                     type="email"
                     value={localSettings.account?.email || ""}
                     disabled
-                    className="relative w-full cursor-default rounded-md bg-gray-300 py-2 pl-3 pr-10 text-left border border-gray-500 focus:outline-none focus-visible:border-gray-800 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-300 sm:text-sm cursor-not-allowed"
+                    className="relative w-full rounded-md bg-gray-300 py-2 pl-3 pr-10 text-left border border-gray-500 focus:outline-none focus-visible:border-gray-800 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-300 sm:text-sm cursor-not-allowed"
                   />
                 }
               />
@@ -115,7 +115,7 @@ const Settings = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.25 }}
           >
             <h2 className="text-xl font-semibold mb-4">Security</h2>
             <div className="space-y-6">
@@ -160,7 +160,7 @@ const Settings = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.25 }}
           >
             <h2 className="text-xl font-semibold mb-4">Interface Settings</h2>
             <div className="space-y-6">
@@ -174,7 +174,6 @@ const Settings = () => {
                       handleSettingChange("interface", "theme", value)
                     }
                     options={["light", "dark"]}
-                    label="Theme"
                   />
                 }
               />
@@ -189,7 +188,6 @@ const Settings = () => {
                         handleSettingChange("interface", "fontSize", value)
                       }
                       options={["small", "medium", "large"]}
-                      label="Font Size"
                     />
                   }
                 />
@@ -203,7 +201,7 @@ const Settings = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.25 }}
           >
             <h2 className="text-xl font-semibold mb-4">Account Data</h2>
             <div className="space-y-6">
@@ -243,7 +241,7 @@ const Settings = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.25 }}
           >
             <h2 className="text-xl font-semibold mb-4">Legal</h2>
             <div className="space-y-6">
@@ -326,7 +324,8 @@ const Settings = () => {
       <motion.div
         initial={{ x: -250 }}
         animate={{ x: 0 }}
-        transition={{ duration: 0.5 }}
+        exit={{ x: -250 }}
+        transition={{ duration: 0.25 }}
         className="w-64 bg-gray-900 text-white p-4"
       >
         <h1 className="text-2xl font-bold mb-6">Settings</h1>
@@ -374,7 +373,7 @@ const Settings = () => {
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 50 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.15 }}
               className="fixed bottom-8 right-8"
             >
               <button
@@ -392,11 +391,18 @@ const Settings = () => {
   );
 };
 
-const SettingItem = ({ label, description, input }) => (
+interface SettingItemProps {
+  label: string;
+  description: string;
+  input: string;
+}
+
+const SettingItem = ({ label, description, input }: SettingItemProps) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
+    exit={{ opacity: 0, y: 20 }}
+    transition={{ duration: 0.25 }}
     className="bg-white p-6 rounded-lg shadow-md mb-6"
   >
     <label className="block text-sm font-medium text-gray-700 mb-1">

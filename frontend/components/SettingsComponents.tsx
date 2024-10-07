@@ -108,7 +108,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
           <Transition
             show={isOpen}
             as={React.Fragment}
-            leave="transition ease-in duration-100"
+            leave="transition ease-in duration-50"
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
