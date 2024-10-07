@@ -3,25 +3,25 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 
 export interface SettingsState {
-  account: {
+  account: object & {
     name: string;
     email: string;
   };
-  security: {
+  security: object & {
     twoFactorEnabled: boolean;
     emailVerificationCode?: string;
     emailVerified?: boolean;
     passwordResetConfirmationCode?: string;
   };
-  interface: {
+  interface: object & {
     theme: "light" | "dark";
     fontSize: "small" | "medium" | "large";
     language: "en";
   };
-  data: {
+  data: object & {
     dataExportRequested: boolean;
   };
-  legal: {
+  legal: object & {
     marketingConsent: boolean;
   };
   loading: boolean;

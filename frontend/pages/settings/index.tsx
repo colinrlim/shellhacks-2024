@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useAppSelector } from "@/store/types";
 import { useAppDispatch } from "@/store";
-import { updateSettings, fetchSettings } from "@/store/slices/settingsSlice";
+import {
+  updateSettings,
+  fetchSettings,
+  SettingsState,
+} from "@/store/slices/settingsSlice";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, User, Shield, Palette, Layers, Box, Save } from "lucide-react";
 import { useRouter } from "next/router";
@@ -29,6 +33,8 @@ const Settings = () => {
   const [localSettings, setLocalSettings] = useState(settings);
   const [hasChanges, setHasChanges] = useState(false);
 
+  type SettingValue = string | boolean | undefined;
+
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
@@ -46,15 +52,17 @@ const Settings = () => {
     setLocalSettings(settings);
   }, [settings]);
 
-  const handleSettingChange = (section: string, key: string, value: any) => {
-    Logger.debug(`Setting changed: ${section}.${key} = ${value}`);
-    setLocalSettings((prev) => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [key]: value,
-      },
-    }));
+  const handleSettingChange = <T extends keyof SettingsState>(
+    section: T,
+    key: keyof SettingsState[T],
+    value: SettingValue
+  ) => {
+    Logger.debug(`Setting changed: ${section}.${key.toString()} = ${value}`);
+    setLocalSettings((prev) => {
+      const newSettings = JSON.parse(JSON.stringify(prev));
+      newSettings[section][key] = value;
+      return newSettings;
+    });
     setHasChanges(true);
   };
 
@@ -394,7 +402,7 @@ const Settings = () => {
 interface SettingItemProps {
   label: string;
   description: string;
-  input: string;
+  input: React.ReactNode;
 }
 
 const SettingItem = ({ label, description, input }: SettingItemProps) => (
