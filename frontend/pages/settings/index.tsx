@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAppSelector } from "@/store/types";
 import { useAppDispatch } from "@/store";
 import {
@@ -23,6 +23,10 @@ import { ToggleSwitch, SelectMenu } from "@/components/SettingsComponents";
 import { withProtected } from "@/hoc";
 import Logger from "@/utils/logger";
 import Link from "next/link";
+import BadWordsNext from "bad-words-next";
+import en from "bad-words-next/data/en.json";
+
+const badWords = new BadWordsNext({ data: en });
 
 // Feature flags
 const FEATURE_FLAGS = {
@@ -45,6 +49,7 @@ const Settings = () => {
   const [localSettings, setLocalSettings] = useState(settings);
   const [hasChanges, setHasChanges] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNameAppropriate, setIsNameAppropriate] = useState(true);
 
   const isDarkMode = settings.interface.theme === "dark";
 
@@ -67,6 +72,11 @@ const Settings = () => {
     setLocalSettings(settings);
   }, [settings]);
 
+  // Function to check if name contains inappropriate words
+  const checkNameAppropriateness = useCallback((name: string) => {
+    return !badWords.check(name);
+  }, []);
+
   const handleSettingChange = <T extends keyof SettingsState>(
     section: T,
     key: keyof SettingsState[T],
@@ -79,11 +89,20 @@ const Settings = () => {
       return newSettings;
     });
     setHasChanges(true);
+
+    // Check name appropriateness when the name is changed
+    if (section === "account" && key === "name") {
+      setIsNameAppropriate(checkNameAppropriateness(value as string));
+    }
   };
 
   const saveSettings = () => {
     if (!user?.auth0Id) {
       Logger.error("Cannot save settings: User ID not found");
+      return;
+    }
+    if (!isNameAppropriate) {
+      Logger.warn("Cannot save settings: Name contains inappropriate words");
       return;
     }
     Logger.info(`Saving settings for user ${user.auth0Id}`);
@@ -113,20 +132,28 @@ const Settings = () => {
             <div className="space-y-6">
               <SettingItem
                 label="Name"
-                description="Your full name as it appears on your account."
+                description="How should we address you?"
                 input={
-                  <input
-                    type="text"
-                    value={localSettings.account?.name || ""}
-                    onChange={(e) =>
-                      handleSettingChange("account", "name", e.target.value)
-                    }
-                    className={`relative w-full cursor-default rounded-md py-2 pl-3 pr-10 text-left border focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-offset-2 sm:text-sm ${
-                      isDarkMode
-                        ? "bg-gray-700 border-gray-600 text-white focus-visible:border-gray-300 focus-visible:ring-white focus-visible:ring-offset-gray-800"
-                        : "bg-gray-100 border-gray-300 text-gray-900 focus-visible:border-gray-500 focus-visible:ring-gray-500 focus-visible:ring-offset-white"
-                    }`}
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      value={localSettings.account?.name || ""}
+                      onChange={(e) => {
+                        const newName = e.target.value;
+                        handleSettingChange("account", "name", newName);
+                      }}
+                      className={`relative w-full cursor-default rounded-md py-2 pl-3 pr-10 text-left border focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-offset-2 sm:text-sm ${
+                        isDarkMode
+                          ? "bg-gray-700 border-gray-600 text-white focus-visible:border-gray-300 focus-visible:ring-white focus-visible:ring-offset-gray-800"
+                          : "bg-gray-100 border-gray-300 text-gray-900 focus-visible:border-gray-500 focus-visible:ring-gray-500 focus-visible:ring-offset-white"
+                      } ${!isNameAppropriate ? "border-red-500" : ""}`}
+                    />
+                    {!isNameAppropriate && (
+                      <p className="text-red-500 text-sm mt-1">
+                        Please choose an appropriate name.
+                      </p>
+                    )}
+                  </div>
                 }
                 isDarkMode={isDarkMode}
               />
@@ -530,7 +557,12 @@ const Settings = () => {
             >
               <button
                 onClick={saveSettings}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex items-center"
+                className={`px-4 py-2 bg-green-600 text-white rounded-md ${
+                  isNameAppropriate
+                    ? "hover:bg-green-700"
+                    : "cursor-not-allowed"
+                }  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex items-center`}
+                disabled={!isNameAppropriate}
               >
                 <Save className="h-5 w-5 mr-2" />
                 Save Changes
