@@ -12,6 +12,7 @@ import { useRouter } from "next/router";
 import { ToggleSwitch, SelectMenu } from "@/components/SettingsComponents";
 import { withProtected } from "@/hoc";
 import Logger from "@/utils/logger";
+import Link from "next/link";
 
 // Feature flags
 const FEATURE_FLAGS = {
@@ -339,14 +340,14 @@ const Settings = () => {
                 label="Terms of Service"
                 description="Read our terms of service agreement."
                 input={
-                  <a
-                    href="/learn/legal/tos"
+                  <Link
+                    href="/legal/tos"
                     className={`text-indigo-600 hover:text-indigo-800 ${
                       isDarkMode ? "text-indigo-400 hover:text-indigo-300" : ""
                     }`}
                   >
                     View Terms of Service
-                  </a>
+                  </Link>
                 }
                 isDarkMode={isDarkMode}
               />
@@ -354,14 +355,14 @@ const Settings = () => {
                 label="Privacy Policy"
                 description="Read our privacy policy."
                 input={
-                  <a
-                    href="/learn/legal/privacy"
+                  <Link
+                    href="/legal/privacy"
                     className={`text-indigo-600 hover:text-indigo-800 ${
                       isDarkMode ? "text-indigo-400 hover:text-indigo-300" : ""
                     }`}
                   >
                     View Privacy Policy
-                  </a>
+                  </Link>
                 }
                 isDarkMode={isDarkMode}
               />

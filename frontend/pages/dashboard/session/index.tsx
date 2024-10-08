@@ -1,5 +1,3 @@
-// @/pages/dashboard/learn/index.tsx
-
 import { useEffect, useState, useRef, RefObject, createRef } from "react";
 import { useRouter } from "next/router";
 import { useAppDispatch } from "@/store";
@@ -12,13 +10,8 @@ import { Loader } from "@/components";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { withProtected } from "@/hoc";
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
+import { X } from "lucide-react";
 
-/**
- * Learn Component
- *
- * Manages the learning session, displaying questions and handling user interactions.
- * It uses Redux for state management and Framer Motion for animations.
- */
 function Learn() {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -47,8 +40,9 @@ function Learn() {
     (state) => state.ui.dismissedResetTip
   );
   const allLoading = useAppSelector((state) => state.questions.loading);
+  const settings = useAppSelector((state) => state.settings);
+  const isDarkMode = settings.interface.theme === "dark";
 
-  // Check if any question is currently loading its explanation
   const someExplanationLoading = questions.some(
     (q) => q.selectedChoice && !q.explanation
   );
@@ -134,7 +128,6 @@ function Learn() {
     return "";
   }
 
-  // Animation variants
   const containerVariants = {
     initial: { opacity: 0 },
     animate: { opacity: 1, transition: { duration: 0.5 } },
@@ -146,11 +139,7 @@ function Learn() {
     animate: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 0.5,
-        delay: 0.2,
-        staggerChildren: 0.1,
-      },
+      transition: { duration: 0.5, delay: 0.2, staggerChildren: 0.1 },
     },
   };
 
@@ -159,121 +148,132 @@ function Learn() {
     animate: { opacity: 1, y: 0 },
   };
 
-  // Start animation on component mount
   useEffect(() => {
     controls.start("animate");
   }, [controls]);
 
   return (
-    <motion.div
-      className="flex justify-center w-full min-h-screen bg-gray-100"
-      variants={containerVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
+    <div
+      className={`min-h-screen flex flex-col ${
+        isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
+      }`}
     >
       <motion.div
-        ref={containerRef}
-        className="w-full max-w-2xl bg-white shadow-xl overflow-y-auto min-h-screen"
-        variants={contentVariants}
+        className="flex-grow flex justify-center items-stretch w-full max-w-3xl mx-auto px-4 py-8"
+        variants={containerVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
       >
-        <div className="p-6">
-          {/* Topic Title */}
-          <motion.h1
-            variants={itemVariants}
-            className="text-3xl font-bold mb-6 text-center"
-          >
-            {currentTopic || "Topic Title"}
-          </motion.h1>
-
-          {/* Reset Tip */}
-          {!dismissedResetTip && !loading && (
-            <motion.div
+        <motion.div
+          ref={containerRef}
+          className={`w-full ${
+            isDarkMode ? "bg-gray-800" : "bg-white"
+          } shadow-xl rounded-lg overflow-hidden flex flex-col`}
+          variants={contentVariants}
+        >
+          <div className="p-6 flex-grow overflow-y-auto">
+            <motion.h1
               variants={itemVariants}
-              className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded-md"
+              className="text-4xl font-bold mb-6 text-center"
             >
-              <div className="flex justify-between items-start">
-                <p className="text-sm">
-                  You can reset your topic by clicking your profile below.
-                </p>
-                <button
-                  className="ml-4 text-blue-700 hover:text-blue-900 focus:outline-none"
-                  onClick={() => dispatch(dismissResetTip())}
-                  aria-label="Dismiss"
-                >
-                  ✕
-                </button>
-              </div>
-            </motion.div>
-          )}
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">
+                {currentTopic || "Topic Title"}
+              </span>
+            </motion.h1>
 
-          {/* Loading indicator */}
-          {loading && (
-            <motion.div
-              variants={itemVariants}
-              className="flex justify-center items-center h-64"
-            >
-              <Loader show={loading} />
-            </motion.div>
-          )}
-
-          {/* Error display */}
-          {error && (
-            <motion.div variants={itemVariants} className="mb-6 text-red-500">
-              <p>Error: {error}</p>
-              <button
-                className="mt-2 bg-red-500 text-white px-4 py-2 rounded"
-                onClick={() => router.push("/")}
+            {!dismissedResetTip && !loading && (
+              <motion.div
+                variants={itemVariants}
+                className={`${
+                  isDarkMode
+                    ? "bg-blue-900 border-blue-700 text-blue-200"
+                    : "bg-blue-100 border-blue-500 text-blue-700"
+                } border-l-4 p-4 mb-6 rounded-md`}
               >
-                Go Home
-              </button>
-            </motion.div>
-          )}
-
-          {/* Questions display */}
-          {currentTopic && (
-            <AnimatePresence>
-              {questions.map((question, index) => {
-                if (!questionRefs.current[question._id]) {
-                  questionRefs.current[question._id] =
-                    createRef<HTMLDivElement>();
-                }
-                return (
-                  <motion.div
-                    key={question._id}
-                    variants={itemVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="initial"
-                    onMouseEnter={() =>
-                      handleQuestionHover(true, String(question._id))
-                    }
-                    onMouseLeave={() =>
-                      handleQuestionHover(false, String(question._id))
-                    }
+                <div className="flex justify-between items-start">
+                  <p className="text-sm">
+                    You can reset your topic by clicking your profile below.
+                  </p>
+                  <button
+                    className={`ml-4 ${
+                      isDarkMode
+                        ? "text-blue-300 hover:text-blue-100"
+                        : "text-blue-700 hover:text-blue-900"
+                    } focus:outline-none`}
+                    onClick={() => dispatch(dismissResetTip())}
+                    aria-label="Dismiss"
                   >
-                    <Question
-                      ref={questionRefs.current[question._id]}
-                      question={question}
-                      questionNumber={index + 1}
-                      currentTopic={currentTopic}
-                      isAnyQuestionLoading={someExplanationLoading}
-                    />
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          )}
-        </div>
+                    <X size={20} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {loading && (
+              <motion.div
+                variants={itemVariants}
+                className="flex justify-center items-center h-64"
+              >
+                <Loader show={loading} />
+              </motion.div>
+            )}
+
+            {error && (
+              <motion.div variants={itemVariants} className="mb-6 text-red-500">
+                <p>Error: {error}</p>
+                <button
+                  className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors duration-200"
+                  onClick={() => router.push("/")}
+                >
+                  Go Home
+                </button>
+              </motion.div>
+            )}
+
+            {currentTopic && (
+              <AnimatePresence>
+                {questions.map((question, index) => {
+                  if (!questionRefs.current[question._id]) {
+                    questionRefs.current[question._id] =
+                      createRef<HTMLDivElement>();
+                  }
+                  return (
+                    <motion.div
+                      key={question._id}
+                      variants={itemVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="initial"
+                      onMouseEnter={() =>
+                        handleQuestionHover(true, String(question._id))
+                      }
+                      onMouseLeave={() =>
+                        handleQuestionHover(false, String(question._id))
+                      }
+                    >
+                      <Question
+                        ref={questionRefs.current[question._id]}
+                        question={question}
+                        questionNumber={index + 1}
+                        currentTopic={currentTopic}
+                        isAnyQuestionLoading={someExplanationLoading}
+                        isDarkMode={isDarkMode}
+                      />
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            )}
+          </div>
+        </motion.div>
       </motion.div>
 
-      {/* Tooltip for loading states */}
       <GlassTooltip show={showTooltip}>{getTooltipContent()}</GlassTooltip>
-    </motion.div>
+    </div>
   );
 }
 
-// Wrap the Dashboard component with authentication protection
 export default withProtected(Learn);
 
 export const getServerSideProps = withPageAuthRequired();
