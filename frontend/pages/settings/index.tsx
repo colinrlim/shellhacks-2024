@@ -323,14 +323,14 @@ const Settings = () => {
             <div className="space-y-6">
               <SettingItem
                 label="Marketing Consent"
-                description="Choose whether to receive marketing emails from us."
+                description="Choose whether to receive occasional updates from us."
                 input={
                   <ToggleSwitch
                     enabled={localSettings.legal?.marketingConsent || false}
                     setEnabled={(value) =>
                       handleSettingChange("legal", "marketingConsent", value)
                     }
-                    label="Receive marketing emails"
+                    label="Receive product update emails"
                     isDarkMode={isDarkMode}
                   />
                 }

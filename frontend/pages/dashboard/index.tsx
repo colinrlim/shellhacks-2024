@@ -83,7 +83,7 @@ function Dashboard() {
       >
         <motion.h1
           variants={childVariants}
-          className="text-5xl md:text-6xl font-bold mb-3" // Reduced bottom margin
+          className="text-5xl md:text-6xl font-bold mb-3"
         >
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">
             Hello, {userName}!
@@ -92,9 +92,9 @@ function Dashboard() {
 
         <motion.p
           variants={childVariants}
-          className={`text-2xl md:text-3xl font-light mb-16 ${
+          className={`text-2xl md:text-3xl font-light mb-10 ${
             isDarkMode ? "text-gray-300" : "text-gray-600"
-          }`} // Increased font size and bottom margin
+          }`}
         >
           What would you like to learn today?
         </motion.p>
