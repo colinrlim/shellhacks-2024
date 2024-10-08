@@ -7,7 +7,17 @@ import {
   SettingsState,
 } from "@/store/slices/settingsSlice";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, User, Shield, Palette, Layers, Box, Save } from "lucide-react";
+import {
+  Search,
+  User,
+  Shield,
+  Palette,
+  Layers,
+  Box,
+  Save,
+  Menu,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/router";
 import { ToggleSwitch, SelectMenu } from "@/components/SettingsComponents";
 import { withProtected } from "@/hoc";
@@ -28,11 +38,13 @@ const Settings = () => {
   const settings = useAppSelector((state) => state.settings);
   const user = useAppSelector((state) => state.user.userInfo);
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
 
+  const searchEnabled = process.env.NEXT_PUBLIC_FEATURE_SEARCH === "true";
+  const [mounted, setMounted] = useState(false);
   const [activeSection, setActiveSection] = useState("account");
   const [localSettings, setLocalSettings] = useState(settings);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isDarkMode = settings.interface.theme === "dark";
 
@@ -78,6 +90,8 @@ const Settings = () => {
     dispatch(updateSettings({ userId: user.auth0Id, settings: localSettings }));
     setHasChanges(false);
   };
+
+  const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
 
   const renderSection = (section: string) => {
     switch (section) {
@@ -399,7 +413,53 @@ const Settings = () => {
     { id: "legal", icon: Box, label: "Legal", disabled: false },
   ];
 
-  const searchEnabled = process.env.NEXT_PUBLIC_FEATURE_SEARCH === "true";
+  const sidebarContent = (
+    <>
+      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      {searchEnabled && (
+        <div className="mb-4">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search"
+              className={`w-full rounded-md py-2 pl-8 pr-4 ${
+                isDarkMode ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
+              }`}
+            />
+            <Search className="absolute left-2 top-2.5 h-5 w-5 text-gray-400" />
+          </div>
+        </div>
+      )}
+      <nav>
+        {sectionItems.map(
+          (item) =>
+            !item.disabled && (
+              <motion.button
+                key={item.id}
+                onClick={() => {
+                  setActiveSection(item.id);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex items-center w-full p-2 rounded-md mb-2 ${
+                  activeSection === item.id
+                    ? isDarkMode
+                      ? "bg-gray-700"
+                      : "bg-gray-800"
+                    : isDarkMode
+                    ? "hover:bg-gray-700"
+                    : "hover:bg-gray-800"
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <item.icon className="h-5 w-5 mr-3" />
+                {item.label}
+              </motion.button>
+            )
+        )}
+      </nav>
+    </>
+  );
 
   return (
     <div
@@ -407,58 +467,50 @@ const Settings = () => {
         isDarkMode ? "bg-gray-900" : "bg-gray-100"
       }`}
     >
+      {/* Mobile Menu Button */}
+      <div className="md:hidden fixed top-4 right-4 z-20">
+        <button
+          onClick={toggleMobileMenu}
+          className={`p-2 rounded-md ${
+            isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+          }`}
+        >
+          {isMobileMenuOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
+        </button>
+      </div>
+      {/* Sidebar for desktop */}
       <motion.div
         initial={{ x: -250 }}
         animate={{ x: 0 }}
         exit={{ x: -250 }}
         transition={{ duration: 0.25 }}
-        className={`w-64 ${
+        className={`hidden md:block w-64 ${
           isDarkMode ? "bg-gray-800" : "bg-gray-900"
         } text-white p-4`}
       >
-        <h1 className="text-2xl font-bold mb-6">Settings</h1>
-        {searchEnabled && (
-          <div className="mb-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search"
-                className={`w-full rounded-md py-2 pl-8 pr-4 ${
-                  isDarkMode
-                    ? "bg-gray-700 text-white"
-                    : "bg-gray-800 text-white"
-                }`}
-              />
-              <Search className="absolute left-2 top-2.5 h-5 w-5 text-gray-400" />
-            </div>
-          </div>
-        )}
-        <nav>
-          {sectionItems.map(
-            (item) =>
-              !item.disabled && (
-                <motion.button
-                  key={item.id}
-                  onClick={() => setActiveSection(item.id)}
-                  className={`flex items-center w-full p-2 rounded-md mb-2 ${
-                    activeSection === item.id
-                      ? isDarkMode
-                        ? "bg-gray-700"
-                        : "bg-gray-800"
-                      : isDarkMode
-                      ? "hover:bg-gray-700"
-                      : "hover:bg-gray-800"
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <item.icon className="h-5 w-5 mr-3" />
-                  {item.label}
-                </motion.button>
-              )
-          )}
-        </nav>
+        {sidebarContent}
       </motion.div>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ duration: 0.25 }}
+            className={`fixed inset-y-0 left-0 z-10 w-64 ${
+              isDarkMode ? "bg-gray-800" : "bg-gray-900"
+            } text-white p-4 md:hidden`}
+          >
+            {sidebarContent}
+          </motion.div>
+        )}
+      </AnimatePresence>
       <main
         className={`flex-1 p-8 m-8 ${
           isDarkMode ? "text-white" : "text-gray-900"
