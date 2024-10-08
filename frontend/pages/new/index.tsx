@@ -31,7 +31,7 @@ function Dashboard() {
     dispatch(resetSession());
     dispatch(setQuestions([]));
     dispatch(setCurrentTopic(input));
-    router.push("/dashboard/session");
+    router.push("/session");
   };
 
   const containerVariants = {

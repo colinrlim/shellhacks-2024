@@ -94,9 +94,9 @@ function ProfilePopover() {
             className="px-2 pb-2"
           >
             {/* Reset Topic button (only shown when not on dashboard) */}
-            {pathname !== "/dashboard" && (
+            {pathname !== "/new" && (
               <button
-                onClick={() => handleNavigation("/dashboard")}
+                onClick={() => handleNavigation("/new")}
                 className="w-full text-left text-sm py-2 px-2 text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center"
               >
                 <RefreshCcw size={16} className="mr-2" />
