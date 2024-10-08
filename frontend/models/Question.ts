@@ -17,6 +17,7 @@ export interface IQuestion extends Document {
   createdBy: string;
   sessionId: string;
   explanation?: string;
+  favorited?: boolean;
 }
 
 // Question Schema
@@ -41,6 +42,7 @@ const QuestionSchema = new mongoose.Schema<IQuestion>({
   createdBy: { type: String, required: true },
   sessionId: { type: String, required: true },
   explanation: { type: String },
+  favorited: { type: Boolean },
 });
 
 // Model Cache Management

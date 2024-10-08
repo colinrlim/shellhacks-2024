@@ -74,7 +74,6 @@ async function StartSession(req: NextApiRequest, res: NextApiResponse) {
       sessionId,
     });
     const topics = await Topic.find({
-      createdBy: auth0Id,
       sessionId,
     });
 

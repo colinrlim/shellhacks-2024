@@ -3,6 +3,7 @@ import { Question as QuestionType } from "@/types";
 import {
   answerClientSideQuestion,
   answerQuestion,
+  favoriteQuestion,
   fetchExplanation,
 } from "@/store/slices/questionsSlice";
 import { getQuestions } from "@/store/slices/knowledgeSlice";
@@ -10,6 +11,7 @@ import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
 import { Loader } from "@/components";
 import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 
 interface QuestionProps {
   question: QuestionType;
@@ -120,6 +122,16 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
       setIsExplanationLoading(true);
     }
 
+    function handleFavoriteQuestion() {
+      if (!sessionId) return;
+      dispatch(favoriteQuestion({ questionId: question._id, sessionId })).then(
+        () => {
+          // Fetch new questions after favoriting
+          dispatch(getQuestions({ topic: currentTopic, sessionId }));
+        }
+      );
+    }
+
     const questionVariants = {
       initial: { opacity: 0, y: 50 },
       animate: { opacity: 1, y: 0, transition: { duration: 0.5 } },
@@ -142,13 +154,41 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
             isDarkMode ? "border-gray-700" : "border-gray-200"
           }`}
         >
-          <h3
-            className={`text-lg font-semibold ${
-              isDarkMode ? "text-white" : "text-gray-800"
-            }`}
+          <div className="flex justify-between items-center">
+            <h3
+              className={`text-lg font-semibold ${
+                isDarkMode ? "text-white" : "text-gray-800"
+              }`}
+            >
+              Question {questionNumber}
+            </h3>
+            {/* Favorite Button */}
+            <button
+              className={`p-2 rounded-full transition-colors ${
+                isDarkMode
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-gray-200 hover:bg-gray-300"
+              }`}
+              onClick={handleFavoriteQuestion}
+              aria-label="Favorite question"
+            >
+              <Star
+                size={20}
+                className={
+                  question.isFavorited
+                    ? "text-yellow-400"
+                    : isDarkMode
+                    ? "text-gray-400"
+                    : "text-gray-600"
+                }
+              />
+            </button>
+          </div>
+          <p
+            className={`mt-2 ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}
           >
-            Question {questionNumber}: {question.question}
-          </h3>
+            {question.question}
+          </p>
         </div>
         <div className="p-4">
           {choices.map(([key, value]) => {

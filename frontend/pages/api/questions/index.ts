@@ -59,19 +59,19 @@ async function GetQuestion(req: NextApiRequest, res: NextApiResponse) {
     // Send the questions to the client
 
     const questions = await Question.find({
-      createdBy: auth0Id,
       sessionId,
     });
     const topics = await Topic.find({
-      createdBy: auth0Id,
       sessionId,
     });
+    const currentTopic = user.currentTopic;
 
     // Send the topics to the user
     return res.status(200).json({
       payload: {
         questions,
         topics,
+        currentTopic,
       },
       updateFlags: {
         questions: true,

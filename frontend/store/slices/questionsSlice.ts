@@ -102,6 +102,73 @@ export const fetchExplanation = createAsyncThunk(
   }
 );
 
+interface FavoriteQuestionPayloadProps {
+  questionId: number;
+  sessionId: string;
+}
+
+const POLLING_INTERVAL = 1000; // 1 second
+const MAX_POLLING_TIME = 10000; // 10 seconds
+
+export const favoriteQuestion = createAsyncThunk(
+  "questions/favoriteQuestion",
+  async ({ questionId, sessionId }: FavoriteQuestionPayloadProps, thunkAPI) => {
+    try {
+      Logger.info(`Favoriting question ${questionId}`);
+      const response = await axios.post(
+        `/learn/api/questions/${questionId}/favorite`,
+        {
+          sessionId,
+        }
+      );
+      Logger.debug(
+        `Favorite response for question ${questionId}:`,
+        response.data
+      );
+
+      // Get the current number of questions
+      const state = thunkAPI.getState() as { questions: QuestionsState };
+      const initialQuestionCount = state.questions.questions.length;
+
+      // Start polling for new questions
+      const startTime = Date.now();
+      while (Date.now() - startTime < MAX_POLLING_TIME) {
+        await new Promise((resolve) => setTimeout(resolve, POLLING_INTERVAL));
+
+        const response = await axios.get(
+          `/learn/api/questions?sessionId=${sessionId}`
+        );
+        const newQuestions = response.data.payload.questions;
+
+        if (newQuestions.length > initialQuestionCount) {
+          Logger.info(`New questions received after favoriting`);
+          return { ...response.data, newQuestions };
+        }
+      }
+
+      Logger.warn(
+        `No new questions received after favoriting within the timeout`
+      );
+      return response.data;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        Logger.error(
+          `Error favoriting question ${questionId}:`,
+          error.response?.data?.message || error.message
+        );
+        return thunkAPI.rejectWithValue(
+          error.response?.data?.message || error.message
+        );
+      }
+      Logger.error(
+        `Unexpected error favoriting question ${questionId}:`,
+        error
+      );
+      return thunkAPI.rejectWithValue("An unexpected error occurred");
+    }
+  }
+);
+
 // Interface for the loading state of individual questions
 interface LoadingState {
   [key: string]: boolean;
@@ -250,6 +317,48 @@ const questionsSlice = createSlice({
             `Question ${questionId} not found when setting fetched explanation`
           );
         }
+      })
+      .addCase(favoriteQuestion.pending, (state, action) => {
+        const { questionId } = action.meta.arg;
+        Logger.info(`Favorite pending for question ${questionId}`);
+        state.loading[questionId] = true;
+        state.error = null;
+      })
+      .addCase(favoriteQuestion.fulfilled, (state, action) => {
+        const { favoritedQuestionId } = action.payload;
+        Logger.info(`Favorite fulfilled for question ${favoritedQuestionId}`);
+        state.loading[favoritedQuestionId] = false;
+        state.error = null;
+
+        if (action.payload.newQuestions) {
+          state.questions = action.payload.newQuestions.map((q: Question) => ({
+            ...q,
+            favorited: q._id === favoritedQuestionId ? true : q.favorited,
+          }));
+          Logger.info(`Updated questions after favoriting`);
+        } else {
+          // If no new questions, just update the favorited status of the existing question
+          const question = state.questions.find(
+            (q) => q._id === favoritedQuestionId
+          );
+          if (question) {
+            question.favorited = true;
+            Logger.debug(`Marked question ${favoritedQuestionId} as favorited`);
+          } else {
+            Logger.warn(
+              `Question ${favoritedQuestionId} not found when marking as favorited`
+            );
+          }
+        }
+      })
+      .addCase(favoriteQuestion.rejected, (state, action) => {
+        const { questionId } = action.meta.arg;
+        Logger.error(
+          `Favorite rejected for question ${questionId}:`,
+          action.payload
+        );
+        state.loading[questionId] = false;
+        state.error = action.payload as string;
       });
   },
 });

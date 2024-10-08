@@ -71,11 +71,14 @@ setOnRegisterTopicReceiveData(
       );
 
       // First identify if the topic already exists
+      Logger.debug(
+        `Checking if topic "${topic_name}" already exists for user ${uid} on session ${session_id}`
+      );
       const existingTopic = await Topic.findOne({
         name: topic_name,
-        createdBy: uid,
         sessionId: session_id,
       });
+      Logger.debug(`Topic found: ${existingTopic}`);
 
       // If the topic already exists, update the description
       if (existingTopic) {
@@ -86,7 +89,7 @@ setOnRegisterTopicReceiveData(
         // If the topic does not exist, create a new topic
         await Topic.create({
           name: topic_name,
-          description: topic_description || "",
+          description: topic_description || "No description yet",
           createdBy: uid,
           sessionId: session_id,
         });
@@ -134,7 +137,6 @@ setOnRegisterRelationshipReceiveData(
       // Locate the prereqTopic in the database
       let prereqTopic = (await Topic.findOne({
         name: topic_name,
-        createdBy: uid,
         sessionId: session_id,
       })) as ITopic | null;
 
@@ -219,7 +221,6 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
   }
 });
 
-// TODO Confirm this works as expected
 setSendMetadataFromDatabases(async (uid, session_id) => {
   const metadata: Metadata_T = {
     current_topic: "",
@@ -248,7 +249,6 @@ setSendMetadataFromDatabases(async (uid, session_id) => {
 
     // Get current topics for user
     const topics = await Topic.find({
-      createdBy: uid,
       sessionId: session_id,
     });
 
@@ -274,7 +274,42 @@ setSendMetadataFromDatabases(async (uid, session_id) => {
     }
 
     // Get favorited questions
-    // TODO Implement favorited questions
+    // TODO Confirm this works as expected
+    const favoritedQuestions = await Question.find({
+      createdBy: uid,
+      sessionId: session_id,
+      favorited: true,
+    });
+    for (const question of favoritedQuestions) {
+      const question_data: Question_T = {
+        question: question.question,
+        choice_1: question.choices["1"],
+        choice_2: question.choices["2"],
+        choice_3: question.choices["3"],
+        choice_4: question.choices["4"],
+        correct_choice: question.correctChoice,
+      };
+
+      const selectedChoice = question.selectedChoice?.toString() || "1";
+      const selectedChoiceQuery = Object.keys(question_data).find((key) =>
+        key.includes(selectedChoice.toString())
+      );
+      // @ts-expect-error This will not be a number
+      const selectedChoiceContent: string =
+        question_data[selectedChoiceQuery as keyof Question_T];
+      const selectedChoiceNumber = parseInt(selectedChoice);
+
+      const user_response: Response_T = {
+        selected_choice: selectedChoiceNumber,
+        selected_choice_content: selectedChoiceContent,
+        is_correct: question.isCorrect || false,
+      };
+
+      metadata.favorited_questions.push({
+        question_data,
+        user_response,
+      });
+    }
 
     // Get historical questions. A question is considered historical if it has been answered
     const questions = await Question.find({
