@@ -1,11 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getSession } from "@auth0/nextjs-auth0";
+import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0";
 import dbConnect from "@/utils/dbConnect";
 import Settings from "@/models/Settings";
 import Logger from "@/utils/logger";
 import { User } from "@/models";
 
-export default async function handler(
+async function settingsRequestHandler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -78,3 +78,5 @@ export default async function handler(
     });
   }
 }
+
+export default withApiAuthRequired(settingsRequestHandler);
