@@ -16,23 +16,39 @@ interface ToggleSwitchProps {
   enabled: boolean;
   setEnabled: (enabled: boolean) => void;
   label: string;
+  isDarkMode: boolean;
 }
 
 export const ToggleSwitch = ({
   enabled,
   setEnabled,
   label,
+  isDarkMode,
 }: ToggleSwitchProps) => {
   return (
     <Field>
       <div className="flex items-center justify-between">
-        <Label className="mr-4 text-sm text-gray-700">{label}</Label>
+        <Label
+          className={`mr-4 text-sm ${
+            isDarkMode ? "text-gray-300" : "text-gray-700"
+          }`}
+        >
+          {label}
+        </Label>
         <Switch
           checked={enabled}
           onChange={setEnabled}
           className={`${
-            enabled ? "bg-indigo-600" : "bg-gray-200"
-          } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
+            enabled
+              ? "bg-indigo-600"
+              : isDarkMode
+              ? "bg-gray-600"
+              : "bg-gray-200"
+          } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+            isDarkMode
+              ? "focus:ring-offset-gray-800"
+              : "focus:ring-offset-white"
+          }`}
         >
           <span
             className={`${
@@ -49,6 +65,7 @@ interface SelectMenuProps {
   value: string;
   onChange: (value: string) => void;
   options: string[];
+  isDarkMode: boolean;
 }
 
 // Helper function to convert a string to proper case
@@ -63,6 +80,7 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
   value,
   onChange,
   options,
+  isDarkMode,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -93,13 +111,19 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
       <div className="relative mt-1">
         <ListboxButton
           ref={buttonRef}
-          className="relative w-full cursor-default rounded-md bg-gray-300 py-2 pl-3 pr-10 text-left border border-gray-500 focus:outline-none focus-visible:border-gray-800 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-300 sm:text-sm"
+          className={`relative w-full cursor-default rounded-md py-2 pl-3 pr-10 text-left border focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-offset-2 sm:text-sm ${
+            isDarkMode
+              ? "bg-gray-700 border-gray-600 text-white focus-visible:border-gray-300 focus-visible:ring-white focus-visible:ring-offset-gray-800"
+              : "bg-gray-100 border-gray-300 text-gray-900 focus-visible:border-gray-500 focus-visible:ring-gray-500 focus-visible:ring-offset-white"
+          }`}
           onClick={() => setIsOpen(!isOpen)}
         >
           <span className="block truncate">{toProperCase(value)}</span>
           <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
             <ChevronsUpDown
-              className="h-5 w-5 text-gray-400"
+              className={`h-5 w-5 ${
+                isDarkMode ? "text-gray-400" : "text-gray-500"
+              }`}
               aria-hidden="true"
             />
           </span>
@@ -113,7 +137,9 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
             leaveTo="opacity-0"
           >
             <ListboxOptions
-              className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+              className={`absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm ${
+                isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+              }`}
               style={{
                 top: `${buttonPosition.top}px`,
                 left: `${buttonPosition.left}px`,
@@ -123,7 +149,11 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
               {options.map((option, optionIdx) => (
                 <ListboxOption
                   key={optionIdx}
-                  className={`relative cursor-default select-none py-2 pl-10 pr-4 active:bg-indigo-100 active:text-indigo-900 text-gray-900`}
+                  className={`relative cursor-default select-none py-2 pl-10 pr-4 ${
+                    isDarkMode
+                      ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                      : "text-gray-900 hover:bg-indigo-100 hover:text-indigo-900"
+                  }`}
                   value={option}
                 >
                   {({ selected }) => (
@@ -136,7 +166,11 @@ export const SelectMenu: React.FC<SelectMenuProps> = ({
                         {toProperCase(option)}
                       </span>
                       {selected ? (
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600">
+                        <span
+                          className={`absolute inset-y-0 left-0 flex items-center pl-3 ${
+                            isDarkMode ? "text-indigo-400" : "text-indigo-600"
+                          }`}
+                        >
                           <Check className="h-5 w-5" aria-hidden="true" />
                         </span>
                       ) : null}

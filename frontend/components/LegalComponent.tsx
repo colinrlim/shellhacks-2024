@@ -1,43 +1,80 @@
-import React from "react";
 import { useRouter } from "next/router";
 import { withProtected } from "@/hoc";
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { useAppSelector } from "@/store/types";
+import { motion } from "framer-motion";
 
 const LegalComponent = () => {
   const router = useRouter();
-  const isDarkMode = useAppSelector((state) => state.ui.isDarkMode);
-  const isPrivacyPolicy = router.pathname.includes("privacypolicy");
+  const settings = useAppSelector((state) => state.settings);
+  const isDarkMode = settings.interface.theme === "dark";
+
+  const isPrivacyPolicy = router.pathname.includes("privacy");
 
   const legalContent = isPrivacyPolicy
     ? privacyPolicyContent
     : termsOfServiceContent;
 
+  if (!settings.hydrated) {
+    return null;
+  }
+
   return (
     <div
-      className={`min-h-screen ${
-        isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
-      }`}
+      className={`min-h-screen ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`}
     >
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-2 text-center">
-          Varidaic AI Learning
-        </h1>
-        <h2 className="text-2xl font-semibold mb-6 text-center">
-          {isPrivacyPolicy ? "Privacy Policy" : "Terms of Service"}
-        </h2>
-        <div
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 ${
-            isDarkMode ? "text-gray-300" : "text-gray-700"
-          }`}
+      <div className="container mx-auto px-4 py-12 max-w-3xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1
+            className={`text-4xl font-bold mb-2 text-center ${
+              isDarkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Varidaic AI Learning
+          </h1>
+          <h2
+            className={`text-2xl font-semibold mb-8 text-center ${
+              isDarkMode ? "text-gray-300" : "text-gray-700"
+            }`}
+          >
+            {isPrivacyPolicy ? "Privacy Policy" : "Terms of Service"}
+          </h2>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
         >
           {legalContent.map((section, index) => (
-            <section key={index} className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
-              <p>{section.content}</p>
-            </section>
+            <motion.section
+              key={index}
+              className="mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * index, duration: 0.5 }}
+            >
+              <h3
+                className={`text-xl font-semibold mb-3 ${
+                  isDarkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                {section.title}
+              </h3>
+              <p
+                className={`leading-relaxed ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                {section.content}
+              </p>
+            </motion.section>
           ))}
-        </div>
+        </motion.div>
       </div>
     </div>
   );

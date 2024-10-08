@@ -33,6 +33,8 @@ const Settings = () => {
   const [localSettings, setLocalSettings] = useState(settings);
   const [hasChanges, setHasChanges] = useState(false);
 
+  const isDarkMode = settings.interface.theme === "dark";
+
   type SettingValue = string | boolean | undefined;
 
   useEffect(() => setMounted(true), []);
@@ -86,7 +88,13 @@ const Settings = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
+            <h2
+              className={`text-xl font-semibold mb-4 ${
+                isDarkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              Account Settings
+            </h2>
             <div className="space-y-6">
               <SettingItem
                 label="Name"
@@ -98,9 +106,14 @@ const Settings = () => {
                     onChange={(e) =>
                       handleSettingChange("account", "name", e.target.value)
                     }
-                    className="relative w-full cursor-default rounded-md bg-gray-300 py-2 pl-3 pr-10 text-left border border-gray-500 focus:outline-none focus-visible:border-gray-800 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-300 sm:text-sm"
+                    className={`relative w-full cursor-default rounded-md py-2 pl-3 pr-10 text-left border focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-offset-2 sm:text-sm ${
+                      isDarkMode
+                        ? "bg-gray-700 border-gray-600 text-white focus-visible:border-gray-300 focus-visible:ring-white focus-visible:ring-offset-gray-800"
+                        : "bg-gray-100 border-gray-300 text-gray-900 focus-visible:border-gray-500 focus-visible:ring-gray-500 focus-visible:ring-offset-white"
+                    }`}
                   />
                 }
+                isDarkMode={isDarkMode}
               />
               <SettingItem
                 label="Email"
@@ -110,9 +123,14 @@ const Settings = () => {
                     type="email"
                     value={localSettings.account?.email || ""}
                     disabled
-                    className="relative w-full rounded-md bg-gray-300 py-2 pl-3 pr-10 text-left border border-gray-500 focus:outline-none focus-visible:border-gray-800 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-300 sm:text-sm cursor-not-allowed"
+                    className={`relative w-full rounded-md py-2 pl-3 pr-10 text-left border focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-offset-2 sm:text-sm cursor-not-allowed ${
+                      isDarkMode
+                        ? "bg-gray-600 border-gray-500 text-gray-300"
+                        : "bg-gray-100 border-gray-300 text-gray-500"
+                    }`}
                   />
                 }
+                isDarkMode={isDarkMode}
               />
             </div>
           </motion.div>
@@ -125,7 +143,13 @@ const Settings = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <h2 className="text-xl font-semibold mb-4">Security</h2>
+            <h2
+              className={`text-xl font-semibold mb-4 ${
+                isDarkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              Security
+            </h2>
             <div className="space-y-6">
               {FEATURE_FLAGS.MFA && (
                 <SettingItem
@@ -144,8 +168,10 @@ const Settings = () => {
                         )
                       }
                       label="Enable Two-Factor Authentication"
+                      isDarkMode={isDarkMode}
                     />
                   }
+                  isDarkMode={isDarkMode}
                 />
               )}
               {FEATURE_FLAGS.CHANGE_PASSWORD && (
@@ -153,10 +179,17 @@ const Settings = () => {
                   label="Change Password"
                   description="Update your account password for better security."
                   input={
-                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button
+                      className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                        isDarkMode
+                          ? "ring-offset-gray-800"
+                          : "ring-offset-white"
+                      }`}
+                    >
                       Change Password
                     </button>
                   }
+                  isDarkMode={isDarkMode}
                 />
               )}
             </div>
@@ -170,7 +203,13 @@ const Settings = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <h2 className="text-xl font-semibold mb-4">Interface Settings</h2>
+            <h2
+              className={`text-xl font-semibold mb-4 ${
+                isDarkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              Interface Settings
+            </h2>
             <div className="space-y-6">
               <SettingItem
                 label="Theme"
@@ -182,8 +221,10 @@ const Settings = () => {
                       handleSettingChange("interface", "theme", value)
                     }
                     options={["light", "dark"]}
+                    isDarkMode={isDarkMode}
                   />
                 }
+                isDarkMode={isDarkMode}
               />
               {FEATURE_FLAGS.FONT_SIZE && (
                 <SettingItem
@@ -196,8 +237,10 @@ const Settings = () => {
                         handleSettingChange("interface", "fontSize", value)
                       }
                       options={["small", "medium", "large"]}
+                      isDarkMode={isDarkMode}
                     />
                   }
+                  isDarkMode={isDarkMode}
                 />
               )}
             </div>
@@ -211,7 +254,13 @@ const Settings = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <h2 className="text-xl font-semibold mb-4">Account Data</h2>
+            <h2
+              className={`text-xl font-semibold mb-4 ${
+                isDarkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              Account Data
+            </h2>
             <div className="space-y-6">
               {FEATURE_FLAGS.DATA_EXPORT && (
                 <SettingItem
@@ -222,11 +271,16 @@ const Settings = () => {
                       onClick={() =>
                         handleSettingChange("data", "dataExportRequested", true)
                       }
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                        isDarkMode
+                          ? "ring-offset-gray-800"
+                          : "ring-offset-white"
+                      }`}
                     >
                       Request Data Export
                     </button>
                   }
+                  isDarkMode={isDarkMode}
                 />
               )}
               {FEATURE_FLAGS.DELETE_ACCOUNT && (
@@ -234,10 +288,17 @@ const Settings = () => {
                   label="Delete Account"
                   description="Permanently delete your account and all associated data."
                   input={
-                    <button className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <button
+                      className={`px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${
+                        isDarkMode
+                          ? "ring-offset-gray-800"
+                          : "ring-offset-white"
+                      }`}
+                    >
                       Delete Account
                     </button>
                   }
+                  isDarkMode={isDarkMode}
                 />
               )}
             </div>
@@ -251,7 +312,13 @@ const Settings = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <h2 className="text-xl font-semibold mb-4">Legal</h2>
+            <h2
+              className={`text-xl font-semibold mb-4 ${
+                isDarkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              Legal
+            </h2>
             <div className="space-y-6">
               <SettingItem
                 label="Marketing Consent"
@@ -263,8 +330,10 @@ const Settings = () => {
                       handleSettingChange("legal", "marketingConsent", value)
                     }
                     label="Receive marketing emails"
+                    isDarkMode={isDarkMode}
                   />
                 }
+                isDarkMode={isDarkMode}
               />
               <SettingItem
                 label="Terms of Service"
@@ -272,11 +341,14 @@ const Settings = () => {
                 input={
                   <a
                     href="/learn/legal/tos"
-                    className="text-indigo-600 hover:text-indigo-800"
+                    className={`text-indigo-600 hover:text-indigo-800 ${
+                      isDarkMode ? "text-indigo-400 hover:text-indigo-300" : ""
+                    }`}
                   >
                     View Terms of Service
                   </a>
                 }
+                isDarkMode={isDarkMode}
               />
               <SettingItem
                 label="Privacy Policy"
@@ -284,11 +356,14 @@ const Settings = () => {
                 input={
                   <a
                     href="/learn/legal/privacy"
-                    className="text-indigo-600 hover:text-indigo-800"
+                    className={`text-indigo-600 hover:text-indigo-800 ${
+                      isDarkMode ? "text-indigo-400 hover:text-indigo-300" : ""
+                    }`}
                   >
                     View Privacy Policy
                   </a>
                 }
+                isDarkMode={isDarkMode}
               />
             </div>
           </motion.div>
@@ -325,16 +400,20 @@ const Settings = () => {
 
   const searchEnabled = process.env.NEXT_PUBLIC_FEATURE_SEARCH === "true";
 
-  console.log(sectionItems, process.env.NEXT_PUBLIC_FEATURE_SECURITY);
-
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div
+      className={`flex min-h-screen ${
+        isDarkMode ? "bg-gray-900" : "bg-gray-100"
+      }`}
+    >
       <motion.div
         initial={{ x: -250 }}
         animate={{ x: 0 }}
         exit={{ x: -250 }}
         transition={{ duration: 0.25 }}
-        className="w-64 bg-gray-900 text-white p-4"
+        className={`w-64 ${
+          isDarkMode ? "bg-gray-800" : "bg-gray-900"
+        } text-white p-4`}
       >
         <h1 className="text-2xl font-bold mb-6">Settings</h1>
         {searchEnabled && (
@@ -343,7 +422,11 @@ const Settings = () => {
               <input
                 type="text"
                 placeholder="Search"
-                className="w-full bg-gray-800 text-white rounded-md py-2 pl-8 pr-4"
+                className={`w-full rounded-md py-2 pl-8 pr-4 ${
+                  isDarkMode
+                    ? "bg-gray-700 text-white"
+                    : "bg-gray-800 text-white"
+                }`}
               />
               <Search className="absolute left-2 top-2.5 h-5 w-5 text-gray-400" />
             </div>
@@ -358,20 +441,28 @@ const Settings = () => {
                   onClick={() => setActiveSection(item.id)}
                   className={`flex items-center w-full p-2 rounded-md mb-2 ${
                     activeSection === item.id
-                      ? "bg-gray-800"
+                      ? isDarkMode
+                        ? "bg-gray-700"
+                        : "bg-gray-800"
+                      : isDarkMode
+                      ? "hover:bg-gray-700"
                       : "hover:bg-gray-800"
                   }`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <item.icon className="h-5 w-5 mr-3" />
-                  {item.label} {item.disabled}
+                  {item.label}
                 </motion.button>
               )
           )}
         </nav>
       </motion.div>
-      <main className="flex-1 p-8 m-8">
+      <main
+        className={`flex-1 p-8 m-8 ${
+          isDarkMode ? "text-white" : "text-gray-900"
+        }`}
+      >
         <AnimatePresence mode="wait">
           {renderSection(activeSection)}
         </AnimatePresence>
@@ -403,20 +494,38 @@ interface SettingItemProps {
   label: string;
   description: string;
   input: React.ReactNode;
+  isDarkMode: boolean;
 }
 
-const SettingItem = ({ label, description, input }: SettingItemProps) => (
+const SettingItem = ({
+  label,
+  description,
+  input,
+  isDarkMode,
+}: SettingItemProps) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: 20 }}
     transition={{ duration: 0.25 }}
-    className="bg-white p-6 rounded-lg shadow-md mb-6"
+    className={`p-6 rounded-lg shadow-md mb-6 ${
+      isDarkMode ? "bg-gray-800" : "bg-white"
+    }`}
   >
-    <label className="block text-sm font-medium text-gray-700 mb-1">
+    <label
+      className={`block text-sm font-medium mb-1 ${
+        isDarkMode ? "text-gray-300" : "text-gray-700"
+      }`}
+    >
       {label}
     </label>
-    <p className="text-sm text-gray-500 mb-4">{description}</p>
+    <p
+      className={`text-sm mb-4 ${
+        isDarkMode ? "text-gray-400" : "text-gray-500"
+      }`}
+    >
+      {description}
+    </p>
     <div className="mt-2">{input}</div>
   </motion.div>
 );

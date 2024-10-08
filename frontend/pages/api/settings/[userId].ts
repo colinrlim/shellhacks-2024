@@ -23,9 +23,16 @@ export default async function handler(
     await dbConnect();
 
     // Use auth0 id to find user object
-    const user = await User.findOne({ auth0Id });
+    let user = await User.findOne({ auth0Id });
     if (!user || !user._id) {
-      return res.status(404).json({ error: "User not found" });
+      // User is using settings before their first session, so create a user object
+      const { name, email } = session.user;
+      Logger.info(
+        `Creating user object for user ${auth0Id} with name ${name} and email ${email}`
+      );
+      const newUser = await User.create({ auth0Id, name, email });
+
+      user = newUser;
     }
     const userId = user._id;
 

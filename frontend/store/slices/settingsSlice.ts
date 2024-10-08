@@ -26,6 +26,7 @@ export interface SettingsState {
   };
   loading: boolean;
   error: string | null;
+  hydrated: boolean;
 }
 
 const initialState: SettingsState = {
@@ -49,7 +50,30 @@ const initialState: SettingsState = {
   },
   loading: false,
   error: null,
+  hydrated: false,
 };
+
+export const hydrateSettings = createAsyncThunk(
+  "settings/hydrateSettings",
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      Logger.info(`Hydrating settings for user ${userId}`);
+      const response = await axios.get(`/learn/api/settings/${userId}`);
+      Logger.debug(`Settings hydrated for user ${userId}:`, response.data);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        Logger.error(
+          `Error fetching settings for user ${userId}:`,
+          error.response?.data?.message || error.message
+        );
+        return rejectWithValue(error.response?.data?.message || error.message);
+      }
+      Logger.error(`Error fetching settings for user ${userId}:`, error);
+      return rejectWithValue("An unexpected error occurred");
+    }
+  }
+);
 
 export const fetchSettings = createAsyncThunk(
   "settings/fetchSettings",
@@ -138,6 +162,20 @@ const settingsSlice = createSlice({
         }
       )
       .addCase(updateSettings.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(
+        hydrateSettings.fulfilled,
+        (state, action: PayloadAction<SettingsState>) => {
+          Object.assign(state, action.payload);
+          state.hydrated = true;
+          state.loading = false;
+          state.error = null;
+        }
+      )
+      .addCase(hydrateSettings.rejected, (state, action) => {
+        state.hydrated = true;
         state.loading = false;
         state.error = action.payload as string;
       });
