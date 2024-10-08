@@ -10,7 +10,6 @@ import { INPUT_start_session } from "@/utils/openai_interface";
 import { Question } from "@/models";
 import "@/utils/openai_handlers";
 import AdminUser from "@/models/AdminUser";
-import { RiCreativeCommonsZeroLine } from "react-icons/ri";
 
 // Function Overrides
 

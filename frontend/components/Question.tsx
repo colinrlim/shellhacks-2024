@@ -1,5 +1,3 @@
-// @/components/Question.tsx
-
 import React, { useEffect, useState, forwardRef, useCallback } from "react";
 import { Question as QuestionType } from "@/types";
 import {
@@ -18,10 +16,20 @@ interface QuestionProps {
   questionNumber: number;
   currentTopic: string;
   isAnyQuestionLoading: boolean;
+  isDarkMode: boolean;
 }
 
 const Question = forwardRef<HTMLDivElement, QuestionProps>(
-  ({ question, questionNumber, currentTopic, isAnyQuestionLoading }, ref) => {
+  (
+    {
+      question,
+      questionNumber,
+      currentTopic,
+      isAnyQuestionLoading,
+      isDarkMode,
+    },
+    ref
+  ) => {
     const dispatch = useAppDispatch();
     const [isExplanationLoading, setIsExplanationLoading] = useState(false);
 
@@ -121,14 +129,24 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
       <motion.div
         ref={ref}
         id={`question-${question._id}`}
-        className="mb-4 bg-white rounded-lg shadow-md overflow-hidden"
+        className={`mb-6 rounded-lg shadow-md overflow-hidden ${
+          isDarkMode ? "bg-gray-800" : "bg-white"
+        }`}
         variants={questionVariants}
         initial="initial"
         animate="animate"
         layout
       >
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold">
+        <div
+          className={`p-4 border-b ${
+            isDarkMode ? "border-gray-700" : "border-gray-200"
+          }`}
+        >
+          <h3
+            className={`text-lg font-semibold ${
+              isDarkMode ? "text-white" : "text-gray-800"
+            }`}
+          >
             Question {questionNumber}: {question.question}
           </h3>
         </div>
@@ -141,12 +159,18 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
             return (
               <button
                 key={key}
-                className={`w-full p-2 mb-2 text-left rounded transition-colors ${
+                className={`w-full p-3 mb-3 text-left rounded-md transition-colors ${
                   isSelected
                     ? isCorrect
-                      ? "bg-green-100 border-green-500"
-                      : "bg-red-100 border-red-500"
-                    : "bg-gray-100 hover:bg-gray-200"
+                      ? isDarkMode
+                        ? "bg-green-800 text-white"
+                        : "bg-green-100 text-green-800"
+                      : isDarkMode
+                      ? "bg-red-800 text-white"
+                      : "bg-red-100 text-red-800"
+                    : isDarkMode
+                    ? "bg-gray-700 text-white hover:bg-gray-600"
+                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                 } ${
                   question.selectedChoice || loading || isAnyQuestionLoading
                     ? "cursor-not-allowed opacity-50"
@@ -165,10 +189,22 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
           })}
         </div>
         {(isExplanationLoading || question.explanation) && (
-          <div className="p-4 bg-gray-50 border-t border-gray-200">
+          <div
+            className={`p-4 border-t ${
+              isDarkMode
+                ? "bg-gray-700 border-gray-600"
+                : "bg-gray-50 border-gray-200"
+            }`}
+          >
             {isExplanationLoading && <Loader show={true} />}
             {question.explanation && (
-              <p className="text-sm text-gray-600">{question.explanation}</p>
+              <p
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                {question.explanation}
+              </p>
             )}
           </div>
         )}

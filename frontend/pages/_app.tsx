@@ -7,6 +7,7 @@ import { UserProvider } from "@auth0/nextjs-auth0/client";
 import "../app/globals.css";
 import { ProfilePopover } from "@/components";
 import { AnimatePresence } from "framer-motion";
+import { SettingsHydrator } from "@/components";
 
 function MyApp({ Component, pageProps, router }: AppProps) {
   return (
@@ -15,6 +16,7 @@ function MyApp({ Component, pageProps, router }: AppProps) {
         loginUrl="/learn/api/auth/login"
         profileUrl="/learn/api/auth/me"
       >
+        <SettingsHydrator />
         <AnimatePresence mode="wait" initial={true}>
           <Component {...pageProps} key={router.route} />
         </AnimatePresence>

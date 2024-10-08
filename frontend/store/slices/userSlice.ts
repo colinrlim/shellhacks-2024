@@ -5,7 +5,6 @@
  */
 
 // Imports
-import Logger from "@/utils/logger";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 // User info interface
@@ -38,14 +37,8 @@ const userSlice = createSlice({
       state.userInfo = action.payload;
       state.isAuthenticated = true;
       state.sessionId = Math.random().toString(36).substring(2);
-      Logger.info(
-        `User set: ${action.payload.auth0Id}, Session ID: ${state.sessionId}`
-      );
     },
     clearUser(state) {
-      Logger.info(
-        `User cleared: ${state.userInfo?.auth0Id || "unauthenticated user"}`
-      );
       state.userInfo = null;
       state.isAuthenticated = false;
       state.sessionId = null;
