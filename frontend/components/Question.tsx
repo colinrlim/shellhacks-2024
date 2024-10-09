@@ -171,11 +171,12 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
               }`}
               onClick={handleFavoriteQuestion}
               aria-label="Favorite question"
+              disabled={isAnyQuestionLoading}
             >
               <Star
                 size={20}
                 className={
-                  question.isFavorited
+                  question.favorited
                     ? "text-yellow-400"
                     : isDarkMode
                     ? "text-gray-400"
