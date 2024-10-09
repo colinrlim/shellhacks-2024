@@ -52,16 +52,7 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
       const allQuestionsAnswered = allQuestions.every(
         (q) => q.selectedChoice !== undefined
       );
-      const noUnansweredQuestions = allQuestions.every(
-        (q) => q.selectedChoice !== undefined
-      );
-
-      if (
-        allQuestionsAnswered &&
-        noUnansweredQuestions &&
-        isSessionActive &&
-        sessionId
-      ) {
+      if (allQuestionsAnswered && isSessionActive && sessionId) {
         dispatch(getQuestions({ topic: currentTopic, sessionId }));
       }
     }, [allQuestions, isSessionActive, sessionId, dispatch, currentTopic]);
@@ -110,7 +101,6 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
           currentTopic,
         })
       );
-
       dispatch(
         answerQuestion({
           questionId: question._id,
@@ -118,15 +108,13 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
           currentTopic,
         })
       );
-
       setIsExplanationLoading(true);
     }
 
     function handleFavoriteQuestion() {
-      if (!sessionId) return;
+      if (!sessionId || loading || isAnyQuestionLoading) return;
       dispatch(favoriteQuestion({ questionId: question._id, sessionId })).then(
         () => {
-          // Fetch new questions after favoriting
           dispatch(getQuestions({ topic: currentTopic, sessionId }));
         }
       );
@@ -162,16 +150,19 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
             >
               Question {questionNumber}
             </h3>
-            {/* Favorite Button */}
             <button
               className={`p-2 rounded-full transition-colors ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
                   : "bg-gray-200 hover:bg-gray-300"
+              } ${
+                loading || isAnyQuestionLoading
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
               }`}
               onClick={handleFavoriteQuestion}
               aria-label="Favorite question"
-              disabled={isAnyQuestionLoading}
+              disabled={loading || isAnyQuestionLoading}
             >
               <Star
                 size={20}
@@ -213,16 +204,12 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
                     ? "bg-gray-700 text-white hover:bg-gray-600"
                     : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                 } ${
-                  question.selectedChoice || loading || isAnyQuestionLoading
+                  loading || isAnyQuestionLoading
                     ? "cursor-not-allowed opacity-50"
                     : "cursor-pointer"
                 }`}
                 onClick={() => handleAnswerQuestion(choiceKey)}
-                disabled={
-                  loading ||
-                  question.selectedChoice !== undefined ||
-                  isAnyQuestionLoading
-                }
+                disabled={loading || isAnyQuestionLoading}
               >
                 {value}
               </button>

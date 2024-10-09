@@ -126,6 +126,7 @@ const knowledgeSlice = createSlice({
     },
     setCurrentTopic(state, action: PayloadAction<string>) {
       state.currentTopic = action.payload;
+      Logger.info(`Current topic set to: ${action.payload}`);
     },
     resetSession(state) {
       state.sessionActive = false;

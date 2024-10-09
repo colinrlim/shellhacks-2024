@@ -325,28 +325,25 @@ const questionsSlice = createSlice({
         state.error = null;
       })
       .addCase(favoriteQuestion.fulfilled, (state, action) => {
-        const { favoritedQuestionId } = action.payload;
-        Logger.info(`Favorite fulfilled for question ${favoritedQuestionId}`);
-        state.loading[favoritedQuestionId] = false;
+        const { questionId } = action.meta.arg;
+        Logger.info(`Favorite fulfilled for question ${questionId}`);
+        state.loading[questionId] = false; // Ensure loading is set to false
         state.error = null;
 
         if (action.payload.newQuestions) {
           state.questions = action.payload.newQuestions.map((q: Question) => ({
             ...q,
-            favorited: q._id === favoritedQuestionId ? true : q.favorited,
+            favorited: q._id === questionId ? true : q.favorited,
           }));
           Logger.info(`Updated questions after favoriting`);
         } else {
-          // If no new questions, just update the favorited status of the existing question
-          const question = state.questions.find(
-            (q) => q._id === favoritedQuestionId
-          );
+          const question = state.questions.find((q) => q._id === questionId);
           if (question) {
             question.favorited = true;
-            Logger.debug(`Marked question ${favoritedQuestionId} as favorited`);
+            Logger.debug(`Marked question ${questionId} as favorited`);
           } else {
             Logger.warn(
-              `Question ${favoritedQuestionId} not found when marking as favorited`
+              `Question ${questionId} not found when marking as favorited`
             );
           }
         }
