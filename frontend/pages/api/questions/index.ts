@@ -64,7 +64,7 @@ async function GetQuestion(req: NextApiRequest, res: NextApiResponse) {
     const topics = await Topic.find({
       sessionId,
     });
-    const currentTopic = user.currentTopic;
+    const { currentTopic } = user;
 
     // Send the topics to the user
     return res.status(200).json({

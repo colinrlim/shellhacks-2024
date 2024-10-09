@@ -1,5 +1,9 @@
 {
   "devDependencies": {
     "@types/mongodb": "^4.0.7"
+  },
+  "dependencies": {
+    "async-mutex": "^0.5.0",
+    "lodash": "^4.17.21"
   }
 }

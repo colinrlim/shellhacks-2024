@@ -239,7 +239,7 @@ interface Question_T {
   choice_2: string;
   choice_3: string;
   choice_4: string;
-  correct_choice: number;
+  correct_choice: 1 | 2 | 3 | 4;
 }
 interface Response_T {
   selected_choice: number;

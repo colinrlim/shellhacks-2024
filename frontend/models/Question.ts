@@ -10,7 +10,7 @@ import mongoose, { Document, Model } from "mongoose";
 export interface IQuestion extends Document {
   question: string;
   choices: Record<"1" | "2" | "3" | "4", string>;
-  correctChoice: number;
+  correctChoice: 1 | 2 | 3 | 4;
   selectedChoice?: number;
   isCorrect?: boolean;
   createdAt: Date;
