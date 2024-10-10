@@ -82,35 +82,36 @@ function Learn() {
     }
   }, [sessionActive, sessionId, currentTopic, dispatch]);
 
-  useEffect(() => {
-    if (containerRef.current && questions.length > 0) {
-      const lastUnansweredQuestionIndex = questions.findIndex(
-        (q) => q.selectedChoice === undefined
-      );
-      if (lastUnansweredQuestionIndex !== -1) {
-        const targetQuestionId = questions[lastUnansweredQuestionIndex]._id;
-        const targetQuestionElement =
-          questionRefs.current[targetQuestionId]?.current;
-        if (targetQuestionElement) {
-          targetQuestionElement.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        }
-      } else {
-        // If all questions are answered, scroll to the last question
-        const lastQuestionId = questions[questions.length - 1]._id;
-        const lastQuestionElement =
-          questionRefs.current[lastQuestionId]?.current;
-        if (lastQuestionElement) {
-          lastQuestionElement.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        }
-      }
-    }
-  }, [questions]);
+  // TODO Fix this scroll into view after questions are answered
+  // useEffect(() => {
+  //   if (containerRef.current && questions.length > 0) {
+  //     const lastUnansweredQuestionIndex = questions.findIndex(
+  //       (q) => q.selectedChoice === undefined
+  //     );
+  //     if (lastUnansweredQuestionIndex !== -1) {
+  //       const targetQuestionId = questions[lastUnansweredQuestionIndex]._id;
+  //       const targetQuestionElement =
+  //         questionRefs.current[targetQuestionId]?.current;
+  //       if (targetQuestionElement) {
+  //         targetQuestionElement.scrollIntoView({
+  //           behavior: "smooth",
+  //           block: "start",
+  //         });
+  //       }
+  //     } else {
+  //       // If all questions are answered, scroll to the last question
+  //       const lastQuestionId = questions[questions.length - 1]._id;
+  //       const lastQuestionElement =
+  //         questionRefs.current[lastQuestionId]?.current;
+  //       if (lastQuestionElement) {
+  //         lastQuestionElement.scrollIntoView({
+  //           behavior: "smooth",
+  //           block: "start",
+  //         });
+  //       }
+  //     }
+  //   }
+  // }, [questions]);
 
   function handleQuestionHover(isHovering: boolean, questionId: string) {
     const question = questions.find((q) => q._id.toString() === questionId);
