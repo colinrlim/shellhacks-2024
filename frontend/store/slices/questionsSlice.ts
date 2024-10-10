@@ -203,7 +203,24 @@ const questionsSlice = createSlice({
   reducers: {
     setQuestions(state, action: PayloadAction<Question[]>) {
       Logger.info(`Setting ${action.payload.length} questions`);
-      state.questions = action.payload;
+
+      if (action.payload.length === 0) {
+        Logger.info(`Resetting questions`);
+        state.questions = [];
+        return;
+      }
+
+      const existingQuestionIds = new Set(state.questions.map((q) => q._id));
+      const newQuestions = action.payload.filter(
+        (q) => !existingQuestionIds.has(q._id)
+      );
+
+      if (newQuestions.length > 0) {
+        Logger.info(`Adding ${newQuestions.length} new questions`);
+        state.questions = [...state.questions, ...newQuestions];
+      } else {
+        Logger.info(`No new questions to add`);
+      }
     },
     addQuestion(state, action: PayloadAction<Question>) {
       Logger.info(`Adding new question: ${action.payload._id}`);
