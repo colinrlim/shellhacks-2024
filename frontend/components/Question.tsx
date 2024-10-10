@@ -120,6 +120,9 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
       );
     }
 
+    const disableFavoriteButton =
+      loading || isAnyQuestionLoading || question.favorited;
+
     const questionVariants = {
       initial: { opacity: 0, y: 50 },
       animate: { opacity: 1, y: 0, transition: { duration: 0.5 } },
@@ -150,31 +153,31 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
             >
               Question {questionNumber}
             </h3>
-            <button
-              className={`p-2 rounded-full transition-colors ${
-                isDarkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-gray-300"
-              } ${
-                loading || isAnyQuestionLoading
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-              }`}
-              onClick={handleFavoriteQuestion}
-              aria-label="Favorite question"
-              disabled={loading || isAnyQuestionLoading}
-            >
-              <Star
-                size={20}
-                className={
-                  question.favorited
-                    ? "text-yellow-400"
-                    : isDarkMode
-                    ? "text-gray-400"
-                    : "text-gray-600"
-                }
-              />
-            </button>
+            {question.selectedChoice && (
+              <button
+                className={`p-2 rounded-full transition-colors ${
+                  isDarkMode
+                    ? "bg-gray-700 hover:bg-gray-600"
+                    : "bg-gray-200 hover:bg-gray-300"
+                } ${
+                  disableFavoriteButton ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                onClick={handleFavoriteQuestion}
+                aria-label="Favorite question"
+                disabled={disableFavoriteButton}
+              >
+                <Star
+                  size={20}
+                  className={
+                    question.favorited
+                      ? "text-yellow-400"
+                      : isDarkMode
+                      ? "text-gray-400"
+                      : "text-gray-600"
+                  }
+                />
+              </button>
+            )}
           </div>
           <p
             className={`mt-2 ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}
