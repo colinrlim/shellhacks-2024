@@ -9,6 +9,7 @@ export interface QuestionProp {
   selectedChoice?: number;
   isCorrect?: boolean;
   explanation: string;
+  favorited?: boolean;
 }
 
 // HistoricalQuestion interface

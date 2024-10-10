@@ -1,6 +1,7 @@
 // @/utils/openai_handlers
 
-// Imports
+import { debounce } from "lodash";
+import { Mutex } from "async-mutex";
 import {
   setOnQuestionCreateReceiveData,
   setOnRegisterRelationshipReceiveData,
@@ -16,8 +17,11 @@ import {
 } from "@/utils/openai_interface";
 import dbConnect from "./dbConnect";
 import { Question, User } from "@/models";
-import Topic, { ITopic } from "@/models/Topic";
+import Topic from "@/models/Topic";
 import Logger from "@/utils/logger";
+
+const topicMutex = new Mutex();
+const debounceTime = 500; // ms
 
 setOnQuestionCreateReceiveData(
   async (uid, session_id, question) =>
@@ -28,8 +32,6 @@ setOnQuestionCreateReceiveData(
           `Creating new question for user ${uid}, session ${session_id}`
         );
 
-        // We have received a new question from the OpenAI endpoint
-        // We need to save this question to the database
         const {
           question: questionText,
           choice_1,
@@ -39,7 +41,6 @@ setOnQuestionCreateReceiveData(
           correct_choice,
         } = question;
 
-        // Save the question to the database
         await Question.create({
           question: questionText,
           choices: {
@@ -64,29 +65,30 @@ setOnQuestionCreateReceiveData(
 
 setOnRegisterTopicReceiveData(
   async (uid, session_id, topic_name, topic_description) => {
+    const release = await topicMutex.acquire();
     try {
       await dbConnect();
       Logger.info(
         `Registering/updating topic "${topic_name}" for user ${uid}, session ${session_id}`
       );
 
-      // First identify if the topic already exists
-      const existingTopic = await Topic.findOne({
+      Logger.debug(
+        `Checking if topic "${topic_name}" already exists for user ${uid} on session ${session_id}`
+      );
+      let existingTopic = await Topic.findOne({
         name: topic_name,
-        createdBy: uid,
         sessionId: session_id,
       });
+      Logger.debug(`Topic found: ${existingTopic}`);
 
-      // If the topic already exists, update the description
       if (existingTopic) {
         existingTopic.description = topic_description || existingTopic.name;
         await existingTopic.save();
         Logger.debug(`Updated existing topic "${topic_name}" for user ${uid}`);
       } else {
-        // If the topic does not exist, create a new topic
-        await Topic.create({
+        existingTopic = await Topic.create({
           name: topic_name,
-          description: topic_description || "",
+          description: topic_description || "No description yet",
           createdBy: uid,
           sessionId: session_id,
         });
@@ -96,71 +98,83 @@ setOnRegisterTopicReceiveData(
       Logger.error(
         `Error registering/updating topic for user ${uid}: ${error}`
       );
+    } finally {
+      release();
     }
   }
 );
 
-setOnSetCurrentTopicReceiveData(async (uid, session_id, topic_name) => {
-  try {
-    await dbConnect();
-    Logger.info(
-      `Setting current topic to "${topic_name}" for user ${uid}, session ${session_id}`
-    );
+const debouncedSetCurrentTopic = debounce(
+  async (uid, session_id, topic_name) => {
+    try {
+      await dbConnect();
+      Logger.info(
+        `Setting current topic to "${topic_name}" for user ${uid}, session ${session_id}`
+      );
 
-    const user = await User.findOne({ auth0Id: uid });
-    if (!user) {
-      Logger.error(`User not found: ${uid}`);
-      return;
+      const user = await User.findOne({ auth0Id: uid });
+      if (!user) {
+        Logger.error(`User not found: ${uid}`);
+        return;
+      }
+
+      user.currentTopic = topic_name;
+      await user.save();
+
+      Logger.debug(`Current topic set successfully for user ${uid}`);
+    } catch (error) {
+      Logger.error(`Error setting current topic for user ${uid}: ${error}`);
     }
+  },
+  debounceTime
+);
 
-    user.currentTopic = topic_name;
-
-    await user.save();
-
-    Logger.debug(`Current topic set successfully for user ${uid}`);
-  } catch (error) {
-    Logger.error(`Error setting current topic for user ${uid}: ${error}`);
-  }
-});
+setOnSetCurrentTopicReceiveData(debouncedSetCurrentTopic);
 
 setOnRegisterRelationshipReceiveData(
   async (uid, session_id, topic_name, child_topic, strength) => {
+    const release = await topicMutex.acquire();
     try {
       await dbConnect();
       Logger.info(
         `Registering relationship between "${topic_name}" and "${child_topic}" for user ${uid}, session ${session_id}`
       );
 
-      // Locate the prereqTopic in the database
-      let prereqTopic = (await Topic.findOne({
+      let prereqTopic = await Topic.findOne({
         name: topic_name,
-        createdBy: uid,
         sessionId: session_id,
-      })) as ITopic | null;
+      });
 
-      // If the prereqTopic is not found, create it
       if (!prereqTopic) {
-        prereqTopic = (await Topic.create({
+        prereqTopic = await Topic.create({
           name: topic_name,
           description: topic_name,
           createdBy: uid,
           sessionId: session_id,
-        })) as ITopic;
+        });
         Logger.debug(
           `Created new prerequisite topic "${topic_name}" for user ${uid}`
         );
       }
 
-      // Add the new relationship to the prereqTopic
-      prereqTopic.relationships.push({
-        child_topic,
-        strength,
-      });
+      const existingRelationship = prereqTopic.relationships.find(
+        (rel) => rel.child_topic === child_topic
+      );
 
-      await prereqTopic.save();
-      Logger.debug(`Relationship registered successfully for user ${uid}`);
+      if (!existingRelationship) {
+        prereqTopic.relationships.push({
+          child_topic,
+          strength,
+        });
+        await prereqTopic.save();
+        Logger.debug(`Relationship registered successfully for user ${uid}`);
+      } else {
+        Logger.debug(`Relationship already exists for user ${uid}`);
+      }
     } catch (error) {
       Logger.error(`Error registering relationship for user ${uid}: ${error}`);
+    } finally {
+      release();
     }
   }
 );
@@ -182,21 +196,17 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
       return;
     }
 
-    // Check for an existing explanation
     if (user.latestExplanation && !user.latestExplanation.saved) {
-      // find the question
       const question = await Question.findById(user.lastSubmitQuestion);
       if (!question) {
         Logger.error(`Question not found for user ${uid}`);
         return;
       }
 
-      // Set the explanation to the question
       question.explanation = explanation;
       await question.save();
       Logger.debug(`Explanation saved to question for user ${uid}`);
 
-      // Set the user's latestExplanation to the explanation
       user.latestExplanation = {
         explanation: "",
         saved: false,
@@ -205,7 +215,6 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
       await user.save();
     }
 
-    // Set the user's latestExplanation to the explanation
     if (user.latestExplanation) {
       user.latestExplanation = {
         explanation,
@@ -219,7 +228,6 @@ setOnExplanationReceiveData(async (uid, session_id, explanation) => {
   }
 });
 
-// TODO Confirm this works as expected
 setSendMetadataFromDatabases(async (uid, session_id) => {
   const metadata: Metadata_T = {
     current_topic: "",
@@ -231,7 +239,6 @@ setSendMetadataFromDatabases(async (uid, session_id) => {
     await dbConnect();
     Logger.info(`Fetching metadata for user ${uid}, session ${session_id}`);
 
-    // Retrieve user session & details
     const user = await User.findOne({ auth0Id: uid });
 
     if (!user) {
@@ -239,20 +246,16 @@ setSendMetadataFromDatabases(async (uid, session_id) => {
       return metadata;
     }
 
-    // Update metadata
     if (!user?.currentTopic) {
       Logger.warn(`User ${uid} does not have a current topic`);
       return metadata;
     }
     metadata.current_topic = user.currentTopic;
 
-    // Get current topics for user
     const topics = await Topic.find({
-      createdBy: uid,
       sessionId: session_id,
     });
 
-    // Loop through the topics creating Topic_T objects
     for (const topic of topics) {
       const newTopic: Topic_T = {
         name: topic.name,
@@ -260,7 +263,6 @@ setSendMetadataFromDatabases(async (uid, session_id) => {
         relationships: [],
       };
 
-      // Loop through the relationships creating Relationship_T objects
       topic.relationships.forEach((relationship) => {
         const { child_topic, strength } = relationship;
         newTopic.relationships.push({
@@ -269,20 +271,49 @@ setSendMetadataFromDatabases(async (uid, session_id) => {
         });
       });
 
-      // Push the new topic to the metadata
       metadata.registered_topics.push(newTopic);
     }
 
-    // Get favorited questions
-    // TODO Implement favorited questions
+    const favoritedQuestions = await Question.find({
+      createdBy: uid,
+      sessionId: session_id,
+      favorited: true,
+    });
+    for (const question of favoritedQuestions) {
+      const question_data: Question_T = {
+        question: question.question,
+        choice_1: question.choices["1"],
+        choice_2: question.choices["2"],
+        choice_3: question.choices["3"],
+        choice_4: question.choices["4"],
+        correct_choice: question.correctChoice,
+      };
+      type ChoiceOptions = "1" | "2" | "3" | "4";
+      const selectedChoice: ChoiceOptions =
+        (String(question.selectedChoice) as ChoiceOptions) || "1";
 
-    // Get historical questions. A question is considered historical if it has been answered
+      // Add a type check and provide a default value
+      const selectedChoiceContent: string = question.choices[selectedChoice];
+
+      const selectedChoiceNumber = parseInt(String(selectedChoice));
+
+      const user_response: Response_T = {
+        selected_choice: selectedChoiceNumber,
+        selected_choice_content: selectedChoiceContent,
+        is_correct: question.isCorrect || false,
+      };
+
+      metadata.favorited_questions.push({
+        question_data,
+        user_response,
+      });
+    }
+
     const questions = await Question.find({
       createdBy: uid,
       sessionId: session_id,
       selectedChoice: { $ne: null },
     });
-    // Loop through the questions creating Question_T objects
     for (const question of questions) {
       if (!question.selectedChoice || question.isCorrect) continue;
       const question_data: Question_T = {
@@ -293,33 +324,30 @@ setSendMetadataFromDatabases(async (uid, session_id) => {
         choice_4: question.choices["4"],
         correct_choice: question.correctChoice,
       };
+      type ChoiceOptions = "1" | "2" | "3" | "4";
+      const selectedChoice: ChoiceOptions =
+        (String(question.selectedChoice) as ChoiceOptions) || "1";
 
-      const selectedChoice = question.selectedChoice || "1";
-      const selectedChoiceQuery = Object.keys(question_data).find((key) =>
-        key.includes(selectedChoice.toString())
-      );
-      // @ts-expect-error This will not be a number
-      const selectedChoiceContent: string =
-        question_data[selectedChoiceQuery as keyof Question_T];
-      const isCorrect = question.isCorrect || false;
+      // Add a type check and provide a default value
+      const selectedChoiceContent: string = question.choices[selectedChoice];
 
-      const user_data: Response_T = {
-        selected_choice: question.selectedChoice,
+      const selectedChoiceNumber = parseInt(String(selectedChoice));
+
+      const user_response: Response_T = {
+        selected_choice: selectedChoiceNumber,
         selected_choice_content: selectedChoiceContent,
-        is_correct: isCorrect,
+        is_correct: question.isCorrect || false,
       };
 
       const questionResponse: QuestionResponse_T = {
         question_data,
-        user_response: user_data,
+        user_response,
       };
 
-      // Append the question to the metadata
       metadata.historical_questions.push(questionResponse);
     }
 
     Logger.debug(`Metadata fetched successfully for user ${uid}`);
-    // Return the metadata
   } catch (error) {
     Logger.error(`Error fetching metadata for user ${uid}: ${error}`);
   } finally {

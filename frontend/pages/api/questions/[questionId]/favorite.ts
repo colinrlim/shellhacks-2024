@@ -1,24 +1,28 @@
-// /api/questions/index
-// GET /api/questions
+// /api/questions/[questionId]/favorite
+// POST /api/questions/[questionId]/favorite
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import dbConnect from "@/utils/dbConnect";
 import User from "@/models/User";
 import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0";
+import {
+  INPUT_favorite,
+  Question_T,
+  QuestionResponse_T,
+} from "@/utils/openai_interface";
 import { Question } from "@/models";
-import Topic from "@/models/Topic";
+import "@/utils/openai_handlers";
 import AdminUser from "@/models/AdminUser";
 
-async function GetQuestion(req: NextApiRequest, res: NextApiResponse) {
-  // Only for GET requests
-  if (req.method !== "GET") {
+// Function Overrides
+
+async function handleFavorite(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "POST") {
     return res.status(405).json({ message: "Method Not Allowed" });
   }
-  if (!req.url) {
-    return res.status(400).json({ message: "Invalid request" });
-  }
-  const params = new URLSearchParams(req.url.split("?")[1]);
-  const sessionId = params.get("sessionId");
+
+  const { questionId } = req.query;
+  const { sessionId } = req.body;
 
   try {
     // Connect to Database
@@ -33,8 +37,12 @@ async function GetQuestion(req: NextApiRequest, res: NextApiResponse) {
 
     // Find user in database
     const user = await User.findOne({ auth0Id });
+    // If the user is not found, create a new user
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      // Return an error if the user is not found
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
     // Check if the user is an administrative user
@@ -56,27 +64,42 @@ async function GetQuestion(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
-    // Send the questions to the client
+    // Find the question
+    const question = await Question.findOne({
+      _id: questionId,
+    });
 
-    const questions = await Question.find({
-      sessionId,
-    });
-    const topics = await Topic.find({
-      sessionId,
-    });
-    const { currentTopic } = user;
+    // Check if the question exists
+    if (!question) {
+      return res.status(404).json({
+        message: "Question not found",
+      });
+    }
+
+    const selectedQuestion: Question_T = {
+      question: question.question,
+      choice_1: question.choices["1"],
+      choice_2: question.choices["2"],
+      choice_3: question.choices["3"],
+      choice_4: question.choices["4"],
+      correct_choice: question.correctChoice,
+    };
+
+    const questionResponse: QuestionResponse_T = {
+      question_data: selectedQuestion,
+      user_response: {
+        selected_choice: 0,
+        selected_choice_content: "",
+        is_correct: false,
+      },
+    };
+
+    // Favorite the question
+    await INPUT_favorite(auth0Id, sessionId, questionResponse);
 
     // Send the topics to the user
     return res.status(200).json({
-      payload: {
-        questions,
-        topics,
-        currentTopic,
-      },
-      updateFlags: {
-        questions: true,
-        topics: true,
-      },
+      message: "Question favorited successfully",
     });
   } catch (error) {
     console.log(error);
@@ -87,4 +110,4 @@ async function GetQuestion(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withApiAuthRequired(GetQuestion);
+export default withApiAuthRequired(handleFavorite);

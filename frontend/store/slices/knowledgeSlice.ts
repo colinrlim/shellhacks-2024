@@ -87,7 +87,9 @@ export const getQuestions = createAsyncThunk(
     const { sessionId } = payload;
     try {
       // Send PUT request to start the session
-      const response = await axios.get(`/learn/api/questions?sessionId=${sessionId}`);
+      const response = await axios.get(
+        `/learn/api/questions?sessionId=${sessionId}`
+      );
       const { data } = response;
 
       // If questions were updated, dispatch setQuestions
@@ -98,6 +100,10 @@ export const getQuestions = createAsyncThunk(
       // If topics were updated, dispatch setTopics
       if (data.updateFlags.topics) {
         dispatch(setTopics(data.payload.topics));
+      }
+
+      if (data.payload.currentTopic) {
+        dispatch(setCurrentTopic(data.payload.currentTopic));
       }
 
       return data;
@@ -120,6 +126,7 @@ const knowledgeSlice = createSlice({
     },
     setCurrentTopic(state, action: PayloadAction<string>) {
       state.currentTopic = action.payload;
+      Logger.info(`Current topic set to: ${action.payload}`);
     },
     resetSession(state) {
       state.sessionActive = false;

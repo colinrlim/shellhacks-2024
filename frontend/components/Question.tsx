@@ -3,6 +3,7 @@ import { Question as QuestionType } from "@/types";
 import {
   answerClientSideQuestion,
   answerQuestion,
+  favoriteQuestion,
   fetchExplanation,
 } from "@/store/slices/questionsSlice";
 import { getQuestions } from "@/store/slices/knowledgeSlice";
@@ -10,6 +11,7 @@ import { useAppDispatch } from "@/store";
 import { useAppSelector } from "@/store/types";
 import { Loader } from "@/components";
 import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 
 interface QuestionProps {
   question: QuestionType;
@@ -50,16 +52,7 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
       const allQuestionsAnswered = allQuestions.every(
         (q) => q.selectedChoice !== undefined
       );
-      const noUnansweredQuestions = allQuestions.every(
-        (q) => q.selectedChoice !== undefined
-      );
-
-      if (
-        allQuestionsAnswered &&
-        noUnansweredQuestions &&
-        isSessionActive &&
-        sessionId
-      ) {
+      if (allQuestionsAnswered && isSessionActive && sessionId) {
         dispatch(getQuestions({ topic: currentTopic, sessionId }));
       }
     }, [allQuestions, isSessionActive, sessionId, dispatch, currentTopic]);
@@ -108,7 +101,6 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
           currentTopic,
         })
       );
-
       dispatch(
         answerQuestion({
           questionId: question._id,
@@ -116,9 +108,20 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
           currentTopic,
         })
       );
-
       setIsExplanationLoading(true);
     }
+
+    function handleFavoriteQuestion() {
+      if (!sessionId || loading || isAnyQuestionLoading) return;
+      dispatch(favoriteQuestion({ questionId: question._id, sessionId })).then(
+        () => {
+          dispatch(getQuestions({ topic: currentTopic, sessionId }));
+        }
+      );
+    }
+
+    const disableFavoriteButton =
+      loading || isAnyQuestionLoading || question.favorited;
 
     const questionVariants = {
       initial: { opacity: 0, y: 50 },
@@ -142,13 +145,45 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
             isDarkMode ? "border-gray-700" : "border-gray-200"
           }`}
         >
-          <h3
-            className={`text-lg font-semibold ${
-              isDarkMode ? "text-white" : "text-gray-800"
-            }`}
+          <div className="flex justify-between items-center">
+            <h3
+              className={`text-lg font-semibold ${
+                isDarkMode ? "text-white" : "text-gray-800"
+              }`}
+            >
+              Question {questionNumber}
+            </h3>
+            {question.selectedChoice && (
+              <button
+                className={`p-2 rounded-full transition-colors ${
+                  isDarkMode
+                    ? "bg-gray-700 hover:bg-gray-600"
+                    : "bg-gray-200 hover:bg-gray-300"
+                } ${
+                  disableFavoriteButton ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                onClick={handleFavoriteQuestion}
+                aria-label="Favorite question"
+                disabled={disableFavoriteButton}
+              >
+                <Star
+                  size={20}
+                  className={
+                    question.favorited
+                      ? "text-yellow-400"
+                      : isDarkMode
+                      ? "text-gray-400"
+                      : "text-gray-600"
+                  }
+                />
+              </button>
+            )}
+          </div>
+          <p
+            className={`mt-2 ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}
           >
-            Question {questionNumber}: {question.question}
-          </h3>
+            {question.question}
+          </p>
         </div>
         <div className="p-4">
           {choices.map(([key, value]) => {
@@ -172,16 +207,12 @@ const Question = forwardRef<HTMLDivElement, QuestionProps>(
                     ? "bg-gray-700 text-white hover:bg-gray-600"
                     : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                 } ${
-                  question.selectedChoice || loading || isAnyQuestionLoading
+                  loading || isAnyQuestionLoading
                     ? "cursor-not-allowed opacity-50"
                     : "cursor-pointer"
                 }`}
                 onClick={() => handleAnswerQuestion(choiceKey)}
-                disabled={
-                  loading ||
-                  question.selectedChoice !== undefined ||
-                  isAnyQuestionLoading
-                }
+                disabled={loading || isAnyQuestionLoading}
               >
                 {value}
               </button>

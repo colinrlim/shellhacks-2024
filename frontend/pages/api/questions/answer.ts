@@ -89,7 +89,7 @@ async function answerQuestionHandler(
       selectedChoice
     );
 
-    const topics = await Topic.find({ createdBy: auth0Id, sessionId });
+    const topics = await Topic.find({ sessionId });
     const questions = await Question.find({
       createdBy: auth0Id,
       sessionId,
